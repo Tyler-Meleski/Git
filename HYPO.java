@@ -786,101 +786,109 @@ public class HYPO {
     // Function: CreateProcess
     //
     // Task Description:
-    //  ...
+    // To take the filename and priority values as inputs and create a new process in the operating system
     //
     // Input Parameters
-    //  None
+    // filename
+    // priority
     //
     // Output Parameters
     //  None
     //
     // Function Return Value
+    //  ERROR_INVALID_ADDRESS
+    //  ptr
     //  OK - On successful execution
      */
     static long CreateProcess(String filename, long priority) {
+        //Allocate space
+        long PCBptr = AllocateOSMemory(PCB_SIZE);//sets PCBptr to allocateosmemeory passes pcb size
 
-        long PCBptr = AllocateOSMemory(PCB_SIZE);
         if(PCBptr < 0) {
-            System.out.print("Error, Invalid Address");
-            return ERROR_INVALID_ADDRESS;
+            System.out.print("Error, Memory Allocation failed");//Displays invalid address error message
+            return ERROR_INVALID_ADDRESS;//Error code < 0
         }
 
-        InitializePCB(PCBptr);
+        InitializePCB(PCBptr);//initialized pcb passing pcbptr
 
-        long value = AbsoluteLoader(filename);
+        long value = AbsoluteLoader(filename);//sets value by calling absoluteloader and passing filname
+
         if(value < 0 || value > MaxMemoryAddress) {
-            System.out.print("Error, loading program");
-            return ERROR_INVALID_ADDRESS;
+            System.out.print("Error, loading program");//Displays error loading program error message
+            return ERROR_INVALID_ADDRESS;//error code < 0
         }
-
+        //stores pc value in the pcb
         RAM[(int) (PCBptr + 20)] = value;
 
-        long ptr = AllocateUserMemory(stackSize);
+        long ptr = AllocateUserMemory(stackSize);//sets ptr to allocateusermem passes stacksize
 
         if(ptr < 0) {
-            System.out.print("Error, User Memeory Allocation Failed");
-            FreeOSMemory(PCBptr, PCB_SIZE);
-            return ptr;
+            System.out.print("Error, User Memory Allocation Failed");//Displays user mem allocation failed error message
+            FreeOSMemory(PCBptr, PCB_SIZE);//calls freeos function pass ptr and size
+            return ptr;//returns error code
         }
 
-        RAM[(int) (PCBptr + 19)] = ptr + stackSize;
-        RAM[(int) (PCBptr + 5)] = ptr;
-        RAM[(int) (PCBptr + 6)] = stackSize;
+        RAM[(int) (PCBptr + 19)] = ptr + stackSize;//empty stack is high address 
+        RAM[(int) (PCBptr + 5)] = ptr;//sets stack address
+        RAM[(int) (PCBptr + 6)] = stackSize;//sets stack size
 
-        RAM[(int) (PCBptr + 4)] = priority;
+        RAM[(int) (PCBptr + 4)] = priority;//sets priority
 
-        DumpMemory("Program Area", 0, 99);
+        DumpMemory("Program Area", 0, 99);//Dumps program area
 
-        PrintPCB(PCBptr);
-        InsertIntoRQ(PCBptr);
+        PrintPCB(PCBptr);//Prints PCB passes ptr
+        InsertIntoRQ(PCBptr);//Insert pcb into rq passng the pointer 
 
         return OK;
-    }
+    }//End of CreateProcess function
+
     /*
     // Function: InitializePCB
     //
     // Task Description:
-    //  ...
+    // To initialize the PCB to the correct values for execution
     //
     // Input Parameters
-    //  None
+    //  PCBptr
     //
     // Output Parameters
     //  None
     //
     // Function Return Value
-    //  OK - On successful execution
+    //  Return
      */
     static void InitializePCB(long PCBptr) {
+        //Array Initialization
         for(int i = 0; i < PCB_SIZE; i++) {
-            RAM[(int) (PCBptr + i)] = 0;
+            RAM[(int) (PCBptr + i)] = 0;//Set PCB area to 0 using ptr
         }
-
-        RAM[(int) (PCBptr + 1)] = ProcessID++;
-        RAM[(int) (PCBptr + 4)] = DefaultPriority;
-        RAM[(int) (PCBptr + 3)] = ReadyState;
-        RAM[(int) (PCBptr + 0)] = EndOfList;
+        //Allocate PID and set it in the PCB
+        RAM[(int) (PCBptr + 1)] = ProcessID++;//Set PID field in the PCB = ProessID
+        RAM[(int) (PCBptr + 4)] = DefaultPriority;//Set priority field in the PCB = Default priority
+        RAM[(int) (PCBptr + 3)] = ReadyState;//Set state field in the PCB = ReadyState
+        RAM[(int) (PCBptr + 0)] = EndOfList;//Set Next PCBptr field in the PCB = EndOfList
 
         return;
-    }
+    }//End of initializePCB function
+
     /*
     // Function: PrintPCB
     //
     // Task Description:
-    //  ...
+    // To print the values from the PCB and the start address of the PCB
     //
     // Input Parameters
-    //  None
+    // PCBptr
     //
     // Output Parameters
     //  None
     //
     // Function Return Value
-    //  OK - On successful execution
+    // none
      */
-
     static void PrintPCB(long PCBptr) {
-   
+    /*Prints the values from the following fields Address, NextPCBptr, PID, State, PC,
+    SP, Priority, stack Info start Address and 8 GPR Addresses*/
         System.out.print("PCB address = " + PCBptr + ", ");
     
         System.out.print("Next PCB Ptr = " + RAM[(int) (PCBptr + 0)] + ", ");
@@ -902,15 +910,17 @@ public class HYPO {
             System.out.print("GPR" + i + " = " + RAM[(int) (PCBptr + 11 + i)] + ", ");
         }
         System.out.println();
-    }
+    }//End of PrintPCB function
+
     /*
     // Function: PrintQueue
     //
     // Task Description:
-    //  ...
+    // To run through the queue and print each PCB value as you
+    // pass through, the queue can be either ready or waiting
     //
     // Input Parameters
-    //  None
+    // Qptr
     //
     // Output Parameters
     //  None
@@ -920,27 +930,28 @@ public class HYPO {
      */
 
     static long PrintQueue(long Qptr) {
-        long currentPCBPtr = Qptr;
+        long currentPCBPtr = Qptr;//Sets currentPCBptr = Qptr
 
         if (currentPCBPtr == EndOfList) {
-            System.out.println("Empty list");
+            System.out.println("Empty list");//Displays empty list message
             return OK;
         }
-
+        //Walks thru queue
+        //Prints each PCB as we move on
         while(currentPCBPtr != EndOfList) {
-            PrintPCB(currentPCBPtr);
+            PrintPCB(currentPCBPtr);//Calls PrintPCB function pass current ptr
             currentPCBPtr = RAM[(int) currentPCBPtr];
-        }
+        }//end of while loop
         return OK;
-    }
+    }//End of PrintQueue function
 
     /*InsertIntoRQ
     //
     // Task Description:
-    //  ...
+    // To insert the PCB based on its priortiy according the CPU algorithm
     //
     // Input Parameters
-    //  None
+    // PCBptr
     //
     // Output Parameters
     //  None
@@ -949,49 +960,58 @@ public class HYPO {
     //  OK - On successful execution
      */
     static long InsertIntoRQ(long PCBptr) {
-        long previousPtr = EndOfList;
-        long currentPtr = RQ;
+        //Insert PCB accordingly to priority
+        //Use priority in the PCB to find the correctplace to insert
+        long previousPtr = EndOfList;//initialized to EOL
+        long currentPtr = RQ;//Initialized to RQ
 
+        //Checks for invalid PCB address
         if((PCBptr < 0) || (PCBptr > MaxMemoryAddress)) {
-            System.out.print("Error, Invalid Address");
-            return ERROR_INVALID_ADDRESS;
+            System.out.print("Error, Invalid Address");//Displays invalid address error message
+            return ERROR_INVALID_ADDRESS;//Error code < 0
         }
-        RAM[(int) (PCBptr + 2)] = ReadyState;
-        RAM[(int) (PCBptr + 0)] = EndOfList;
-
+        RAM[(int) (PCBptr + 2)] = ReadyState;//sets state to ready state
+        RAM[(int) (PCBptr + 0)] = EndOfList;//Setx next ptr to EOL
+        //If the RQ is empty
         if(RQ == EndOfList) {
             RQ = PCBptr;
             return OK;
         }
 
+        //Walks thru RQ to find place of insert
+        //PCB is inserted at the end of priority
         while(currentPtr != EndOfList) {
             if(RAM[(int) (PCBptr + 4)] > RAM[(int) (currentPtr + 4)]) {
+                //Place of insert is found
                 if(previousPtr == EndOfList) {
+                    //PCB is entered in front
                     RAM[(int) (PCBptr + 0)] = RQ;
                     RQ = PCBptr;
                     return OK;
                 }
+                //Enter PCB in the middle of list
                 RAM[(int) (PCBptr + 0)] = RAM[(int) (previousPtr + 0)];
                 RAM[(int) (previousPtr + 0)] = PCBptr;
                 return OK;
             }
-            else 
+            else //PCB that is inserted has lower or equal priority to current PCB in RQ
             {
                 previousPtr = currentPtr;
                 currentPtr = RAM[(int) (currentPtr + 0)];
             }
-        }
+        }//End of while loop
         RAM[(int) (previousPtr + 0)] = PCBptr;
         return OK;
-    }
+    }//End of InsertIntoRQ function
+
     /*
     // Function: InsertIntoWQ
     //
     // Task Description:
-    //  ...
+    // Inserts the given PCB into WQ at the front of the queue
     //
     // Input Parameters
-    //  None
+    // PCBptr
     //
     // Output Parameters
     //  None
@@ -999,25 +1019,26 @@ public class HYPO {
     // Function Return Value
     //  OK - On successful execution
      */
-
     static long InsertIntoWQ(long PCBptr) {
+        //if the PCBptr is in the invalid range
         if((PCBptr < 0) || (PCBptr > MaxMemoryAddress)) {
-            System.out.print("Error, Invalid PCB Address");
-            return ERROR_INVALID_ADDRESS;
+            System.out.print("Error, Invalid PCB Address");//Displays Invalid PCB address error message
+            return ERROR_INVALID_ADDRESS;//Returns error code < 0
         }
 
-        RAM[(int) (PCBptr + 2)] = Waiting;
-        RAM[(int) (PCBptr + 0)] = WQ;
+        RAM[(int) (PCBptr + 2)] = Waiting;//Set state to ready state
+        RAM[(int) (PCBptr + 0)] = WQ;//Sets next ptr to EOL
 
         WQ = PCBptr;
 
         return OK;
-    }
+    }//end of InsertIntoWQ function
+
     /*
     // Function: SelectProcessFromRQ
     //
     // Task Description:
-    //  ...
+    // To select the first process in the ready queue and return the ptr to the PCB
     //
     // Input Parameters
     //  None
@@ -1026,39 +1047,40 @@ public class HYPO {
     //  None
     //
     // Function Return Value
-    //  OK - On successful execution
+    //  PCBptr
      */
-
     static long SelectProcessFromRQ() {
-        long PCBptr = RQ;
+        long PCBptr = RQ;//Initialized ptr to RQ
 
         if(RQ != EndOfList) {
+            //remove first PCB from RQ
             RQ = RAM[(int) (RQ + 0)];
         }
-
+        //Set next point to EOL in the PCB
         RAM[(int) (PCBptr + 0)] = EndOfList;
 
         return PCBptr;
-    }
+    }//End of SelectProcessFromRQ function
 
     /*
     // Function: SaveContext
     //
     // Task Description:
-    //  ...
+    // To save the CPU context to help restore the PCB to the CPU later
     //
     // Input Parameters
-    //  None
+    // PCBptr
     //
     // Output Parameters
     //  None
     //
     // Function Return Value
-    //  OK - On successful execution
+    //  
      */
 
     static void SaveContext(long PCBptr) {
-    
+        //Copy all CPU GPR's into the PCB using PCBptr
+        //copy without using a loop
         RAM[(int) (PCBptr + 11)] = GPR[0];
         RAM[(int) (PCBptr + 12)] = GPR[1];
         RAM[(int) (PCBptr + 13)] = GPR[2];
@@ -1068,31 +1090,29 @@ public class HYPO {
         RAM[(int) (PCBptr + 17)] = GPR[6];
         RAM[(int) (PCBptr + 18)] = GPR[7];
 
-    
-        RAM[(int) (PCBptr + 19)] = SP;
-        RAM[(int) (PCBptr + 20)] = PC;
+        RAM[(int) (PCBptr + 19)] = SP;//Save SP
+        RAM[(int) (PCBptr + 20)] = PC;//Save PC
 
         return;
-    }
+    }//End of SaveContext function
 
     /*
     // Function: Dispatcher
     //
     // Task Description:
-    //  ...
+    // To help restore the context to help restore the context of the PCB into CPU
     //
     // Input Parameters
-    //  None
+    // PCBptr
     //
     // Output Parameters
     //  None
     //
     // Function Return Value
-    //  OK - On successful execution
+    //  
      */
-
     static void Dispatcher(long PCBptr) {
-        
+        //Copy CPU GPR register values from given PCB into the CPU registers
         GPR[0] = RAM[(int) (PCBptr + 11)];
         GPR[1] = RAM[(int) (PCBptr + 12)];
         GPR[2] = RAM[(int) (PCBptr + 13)];
@@ -1102,265 +1122,295 @@ public class HYPO {
         GPR[6] = RAM[(int) (PCBptr + 17)];
         GPR[7] = RAM[(int) (PCBptr + 18)];
 
+        //Restore SP and PC from PCB
         SP = RAM[(int) (PCBptr + 19)];
         PC = RAM[(int) (PCBptr + 20)];
 
     
-        PSR = UserMode; // UserMode is 2, OSMode is 1.
+        PSR = UserMode;//UserMode is 2, OSMode is 1.
 
         return;
-    }
+    }//End of Dispatcher function
+
     /*
     // Function: Terminate Process
     //
     // Task Description:
-    //  ...
+    // This function is able to return 
     //
     // Input Parameters
-    //  None
+    // PCBptr
     //
     // Output Parameters
     //  None
     //
     // Function Return Value
-    //  OK - On successful execution
+    //  
      */
     static void TerminateProcess(long PCBptr) {
         long stackStartAddress = RAM[(int) (PCBptr + 5)];
         long stackSize = RAM[(int) (PCBptr + 6)];
 
+        //Returns stack memory using the address and size
         for (long i = stackStartAddress; i < stackStartAddress + stackSize; i++) {
             RAM[(int) i] = 0; 
         }
-
+        //Returns PCB memory using ptr
         for (int i = 0; i < PCB_SIZE; i++) {
             RAM[(int) (PCBptr + i)] = 0;
         }
         return;
-    }
+    }//End of TerminateProcess function
+
     /*
     // Function: AllocateOSMemory
     //
     // Task Description:
-    //  ...
+    // To allocate the memory from OSFreeList and return its memory Addresses
     //
     // Input Parameters
-    //  None
+    // RequestedSize
     //
     // Output Parameters
     //  None
     //
     // Function Return Value
-    //  OK - On successful execution
+    //  ERROR_NO_FREE_MEMORY            no free memory error message
+    //  ERROR_INVALID_MEMORY_SIZE       invalid memory size error message
+    //  CurrentPtr
      */
     static long AllocateOSMemory(long RequestedSize) {
-
+        //Allocate mem from os
         if(OSFreeList == EndOfList) {
-            System.out.print("Error, no free os memory");
-            return ERROR_NO_FREE_MEMORY;
+            System.out.print("Error, no free os memory");//Displays No free os error message
+            return ERROR_NO_FREE_MEMORY;//Error code < 0
         }
         if(RequestedSize < 0) {
-            System.out.print("Error, invalid size");
-            return ERROR_INVALID_MEMORY_SIZE;
+            System.out.print("Error, invalid size");//Displays invalid size error message
+            return ERROR_INVALID_MEMORY_SIZE;//Error code < 0
         }
         if(RequestedSize == 1) {
-            RequestedSize = 2;
+            RequestedSize = 2;//The minimum size is 2 mem locations
         }
 
-        long CurrentPtr = OSFreeList;
-        long PreviousPtr = EndOfList;
+        long CurrentPtr = OSFreeList;//Initialized to OSFreeList
+        long PreviousPtr = EndOfList;//Initialized to EOL
 
         while(CurrentPtr != EndOfList) {
+            //Checks each block in the list
             if((RAM[(int) (CurrentPtr + 1)] == RequestedSize)) {
-                if(CurrentPtr == OSFreeList) {
-                    OSFreeList = RAM[(int) CurrentPtr];
-                    RAM[(int) CurrentPtr] = EndOfList;
-                    return CurrentPtr;
-                }
-                else 
+                //if block is found, ptrs will be adjusted
+                if(CurrentPtr == OSFreeList)//if first block
                 {
-                    RAM[(int) PreviousPtr] = RAM[(int) CurrentPtr];
-                    RAM[(int) CurrentPtr] = EndOfList;
-                    return CurrentPtr;
+                    OSFreeList = RAM[(int) CurrentPtr];//first ptr entry
+                    RAM[(int) CurrentPtr] = EndOfList;//Resets ptr
+                    return CurrentPtr;//returns memory
+                }
+                else//if not first block
+                {
+                    RAM[(int) PreviousPtr] = RAM[(int) CurrentPtr];//next block
+                    RAM[(int) CurrentPtr] = EndOfList;//reset next ptr
+                    return CurrentPtr;//returns memory
                 }
             }
-            else if((RAM[(int) (CurrentPtr + 1)]) > RequestedSize) {
-                if(CurrentPtr == OSFreeList)
-                {
-                    RAM[(int) (CurrentPtr + RequestedSize)] = RAM[(int) CurrentPtr];
-                    RAM[(int) (CurrentPtr + RequestedSize + 1)] = RAM[(int) (CurrentPtr + 1)] - RequestedSize;
-                    OSFreeList = CurrentPtr + RequestedSize;
-                    RAM[(int) CurrentPtr] = EndOfList;
-                    return CurrentPtr;
-                }
-                else 
-                {
-                    RAM[(int) (CurrentPtr + RequestedSize)] = RAM[(int) CurrentPtr];
-                    RAM[(int) (CurrentPtr + RequestedSize + 1)] = RAM[(int) (CurrentPtr + 1)] - RequestedSize;
-                    RAM[(int) PreviousPtr] = CurrentPtr + RequestedSize;
-                    RAM[(int) CurrentPtr] = EndOfList;
-                    return CurrentPtr;
-                }
-            }
-            else 
+            else if((RAM[(int) (CurrentPtr + 1)]) > RequestedSize)//if blocks size is greater than requestedsize
             {
+                if(CurrentPtr == OSFreeList)//first block
+                {
+                    RAM[(int) (CurrentPtr + RequestedSize)] = RAM[(int) CurrentPtr];//move next block
+                    RAM[(int) (CurrentPtr + RequestedSize + 1)] = RAM[(int) (CurrentPtr + 1)] - RequestedSize;
+                    OSFreeList = CurrentPtr + RequestedSize;//reduced block address
+                    RAM[(int) CurrentPtr] = EndOfList;//resets next ptr
+                    return CurrentPtr;//returns memory
+                }
+                else//not first
+                {
+                    RAM[(int) (CurrentPtr + RequestedSize)] = RAM[(int) CurrentPtr];//move next block
+                    RAM[(int) (CurrentPtr + RequestedSize + 1)] = RAM[(int) (CurrentPtr + 1)] - RequestedSize;
+                    RAM[(int) PreviousPtr] = CurrentPtr + RequestedSize;//reduced block address
+                    RAM[(int) CurrentPtr] = EndOfList;//resets next ptr
+                    return CurrentPtr;//returns memory
+                }
+            }
+            else//small block
+            {
+                //look to the next block
                 PreviousPtr = CurrentPtr;
                 CurrentPtr = RAM[(int) CurrentPtr];
             }
-        
-        }
-        System.out.print("Error, no free os memory");
-        return ERROR_NO_FREE_MEMORY;
-    }
+        }//End of while loop
+
+        System.out.print("Error, no free os memory");//displays no free os error message
+        return ERROR_NO_FREE_MEMORY;//error code < 0
+    }//End of AllocateOSMemory function
+
     /*
     // Function: FreeOSMemory
     //
     // Task Description:
-    //  ...
+    // To return the memory to os free space
     //
     // Input Parameters
-    //  None
+    // ptr
+    // size
     //
     // Output Parameters
     //  None
     //
     // Function Return Value
-    //  OK - On successful execution
+    // ERROR_INVALID_MEMORY_ADDRESS     invalid memory address error message
+    // OK                               on succesful executiom
      */
     static long FreeOSMemory(long ptr, long size) {
         if(ptr > 6000 || ptr < 9999) {//Address range given in class
-            System.out.print("Error, Invalid Memory Address");
-            return ERROR_INVALID_MEMORY_ADDRESS;
+            System.out.print("Error, Invalid Memory Address");//Displays Invalid Memory Address erorr message
+            return ERROR_INVALID_MEMORY_ADDRESS;//error code < 0
         }
         if(size == 1) {
-            size = 2;
+            size = 2;//2 is the minimum size
         }
         else if((size < 1 || (ptr + size) >= MaxMemoryAddress)) {
-            System.out.print("Error, Invalid Size or Memory Address");
-            return ERROR_INVALID_MEMORY_ADDRESS;
+            //invalid size
+            System.out.print("Error, Invalid Size or Memory Address");//displays invalid size or memory address error message
+            return ERROR_INVALID_MEMORY_ADDRESS;//error code < 0
         }
 
-        RAM[(int) ptr] = OSFreeList;
-        RAM[(int) (ptr + 1)] = size;
-        OSFreeList = ptr;
+        //Insert free block at beggining of OSfreelist
+        RAM[(int) ptr] = OSFreeList;//free block pointed by os
+        RAM[(int) (ptr + 1)] = size;//sets free block size
+        OSFreeList = ptr;//sets os free list to block
 
         return OK;
-    }
+    }//End of FreeOSMemory function
+
     /*
     // Function: AllocateUserMemory
     //
     // Task Description:
-    //  ...
+    //  To Allocate the memory from UserFreeList and return the memory Addresses
     //
     // Input Parameters
-    //  None
+    // Size
     //
     // Output Parameters
     //  None
     //
     // Function Return Value
-    //  OK - On successful execution
-     */
-   
+    // ERROR_NO_FREE_MEMORY         No free memory error message
+    // ERROR_INVALID_MEMORY_SIZE    invalid memory siz error message
+    // CurrentPtr
+     */ 
     static long AllocateUserMemory(long size) {
+    //use code from os and modified to userfreelist
         if(UserFreeList == EndOfList) {
-            System.out.print("Error, no free os memory");
-            return ERROR_NO_FREE_MEMORY;
+            System.out.print("Error, no free user memory");//Displays no free user memory error message
+            return ERROR_NO_FREE_MEMORY;//error code < 0
         }
         if(size < 0) {
-            System.out.print("Error, invalid size");
-            return ERROR_INVALID_MEMORY_SIZE;
+            System.out.print("Error, invalid size");//Displays invalid size error message
+            return ERROR_INVALID_MEMORY_SIZE;//error code < 0
         }
         if(size == 1) {
-            size = 2;
+            size = 2;//minimum size is 2
         }
 
-        long CurrentPtr = UserFreeList;
-        long PreviousPtr = EndOfList;
+        long CurrentPtr = UserFreeList;//initialized to user freelist
+        long PreviousPtr = EndOfList;//Initialized to EOL
 
         while(CurrentPtr != EndOfList) {
+            //checks each block in the list
             if((RAM[(int) (CurrentPtr + 1)] == size)) {
-                if(CurrentPtr == OSFreeList) {
-                    UserFreeList = RAM[(int) CurrentPtr];
-                    RAM[(int) CurrentPtr] = EndOfList;
-                    return CurrentPtr;
-                }
-                else 
+                //if block is found ptrs are adjusted
+                if(CurrentPtr == OSFreeList)//first block
                 {
-                    RAM[(int) PreviousPtr] = RAM[(int) CurrentPtr];
-                    RAM[(int) CurrentPtr] = EndOfList;
-                    return CurrentPtr;
+                    UserFreeList = RAM[(int) CurrentPtr];//first entry
+                    RAM[(int) CurrentPtr] = EndOfList;//reset ptr to next block
+                    return CurrentPtr;//return memory
+                }
+                else//not first
+                {
+                    RAM[(int) PreviousPtr] = RAM[(int) CurrentPtr];//points to next block
+                    RAM[(int) CurrentPtr] = EndOfList;//resets ptr ti next block
+                    return CurrentPtr;//returns memory
                 }
             }
-            else if((RAM[(int) (CurrentPtr + 1)]) > size) {
-                if(CurrentPtr == UserFreeList)
-                {
-                    RAM[(int) (CurrentPtr + size)] = RAM[(int) CurrentPtr];
-                    RAM[(int) (CurrentPtr + size + 1)] = RAM[(int) (CurrentPtr + 1)] - size;
-                    UserFreeList = CurrentPtr + size;
-                    RAM[(int) CurrentPtr] = EndOfList;
-                    return CurrentPtr;
-                }
-                else 
-                {
-                    RAM[(int) (CurrentPtr + size)] = RAM[(int) CurrentPtr];
-                    RAM[(int) (CurrentPtr + size + 1)] = RAM[(int) (CurrentPtr + 1)] - size;
-                    RAM[(int) PreviousPtr] = CurrentPtr + size;
-                    RAM[(int) CurrentPtr] = EndOfList;
-                    return CurrentPtr;
-                }
-            }
-            else 
+            else if((RAM[(int) (CurrentPtr + 1)]) > size)//found block has size greater than requested 
             {
+                if(CurrentPtr == UserFreeList)//first block
+                {
+                    RAM[(int) (CurrentPtr + size)] = RAM[(int) CurrentPtr];//next block ptr
+                    RAM[(int) (CurrentPtr + size + 1)] = RAM[(int) (CurrentPtr + 1)] - size;
+                    UserFreeList = CurrentPtr + size;//reduced block adr
+                    RAM[(int) CurrentPtr] = EndOfList;//resets ptr
+                    return CurrentPtr;//returns memory
+                }
+                else//not first block
+                {
+                    RAM[(int) (CurrentPtr + size)] = RAM[(int) CurrentPtr];//next block ptr
+                    RAM[(int) (CurrentPtr + size + 1)] = RAM[(int) (CurrentPtr + 1)] - size;
+                    RAM[(int) PreviousPtr] = CurrentPtr + size;//reduced block adr
+                    RAM[(int) CurrentPtr] = EndOfList;//restes ptr
+                    return CurrentPtr;//returns memory
+                }
+            }
+            else//small block
+            {
+                //looks to the next block
                 PreviousPtr = CurrentPtr;
                 CurrentPtr = RAM[(int) CurrentPtr];
             }
-        
-        }
-        System.out.print("Error, no free os memory");
-        return ERROR_NO_FREE_MEMORY;
-    }
+        }//end of while loop
+
+        System.out.print("Error, no free os memory");//displays no free os memory error message
+        return ERROR_NO_FREE_MEMORY;//error code < 0
+    }//End of AllocateUserMemory function
+
     /*
     // Function: FreeUserMemory
     //
     // Task Description:
-    //  ...
+    //  To return the memory addresses form UserFreeList
     //
     // Input Parameters
-    //  None
+    // ptr
+    // size
     //
     // Output Parameters
     //  None
     //
     // Function Return Value
-    //  OK - On successful execution
+    // ERROR_INVALID_MEMORY_ADDRESS     Invalid Memory Address error message
+    // OK - On successful execution
      */
     static long FreeUserMemory(long ptr, long size) {
-
+        //Return the memory to userfreespace
         if(ptr > 3000 || ptr < 5999) {//User memory area given in vlass
-            System.out.print("Error, Invalid Memory Address");
-            return ERROR_INVALID_MEMORY_ADDRESS;
+            System.out.print("Error, Invalid Memory Address");//Displays Invalid Address error
+            return ERROR_INVALID_MEMORY_ADDRESS;//error code < 0
         }
 
         if(size == 1) {
-            size = 2;
+            size = 2;//2 is the minimum size
         }
-        else if((size < 1 || (ptr + size) > UserFreeList)) {
-            System.out.print("Error, Invalid Size");
-            return ERROR_INVALID_MEMORY_ADDRESS;
+        else if((size < 1 || (ptr + size) > UserFreeList))//invalid size
+        {
+            System.out.print("Error, Invalid Size");//Displays Invalid Size error message
+            return ERROR_INVALID_MEMORY_ADDRESS;//error code < 0
         }
 
+        //Inserts free block at the beggining
         RAM[(int) ptr] = UserFreeList;
-        RAM[(int) (ptr + 1)] = size;
-        UserFreeList = ptr;
+        RAM[(int) (ptr + 1)] = size;//sets block size
+        UserFreeList = ptr;//sets userfreelist to block
 
         return OK;
-    }
+    }//End of FreeUserMemory function
+
     /*
     // Function: CheckAndProcessInterrupt
     //
     // Task Description:
-    //  ...
+    // To read the interrupt ID and service the interrupt depending on the value of the enetered ID
     //
     // Input Parameters
     //  None
@@ -1369,11 +1419,12 @@ public class HYPO {
     //  None
     //
     // Function Return Value
-    //  OK - On successful execution
+    // InterruptID          user input value of interruptID
      */ 
     static long CheckAndProcessInterrupt() {
         Scanner reader = new Scanner(System.in);
        
+        //Displays the possible interrupts
         System.out.println("Enter Interrupt ID: ");
         System.out.println("Interrupt ID's:"); 
         System.out.println("ID: 0 - No Interrupt");
@@ -1382,37 +1433,39 @@ public class HYPO {
         System.out.println("ID: 3 - Input Operation Completion(io_getc)");
         System.out.println("ID: 4 - Output Operation Completion(io_putc");
 
+        //Prompts user to enter the interrupt ID
         long interruptID = reader.nextLong();
-        System.out.println("Read Interrupt value: " + interruptID);
+        System.out.println("Read Interrupt value: " + interruptID);//Reads and displays the interrupt ID
 
         switch((int) interruptID)
         {
-        case 0:
+        case 0://No Interrupt
             break;
-        case 1:
+        case 1://Run program
             ISRunProgramInterrupt();
             break;
-        case 2:
+        case 2://Shutdown System
             ISRshutdownSystem();
             break;
-        case 3:
+        case 3://Input operation completion - io_getc
             ISRinputCompletionInterrupt();
             break;
-        case 4:
+        case 4://Output operation completion - io_putc
             ISRoutputCompletionInterrupt();
             break;
-        default:
+        default://Invalid interruptID
             System.out.print("Error, Invalid Interrupt");
             break;
-        }
+        }//End of switch
 
         return interruptID;
-    }
+    }//End of CheckAndProcessInterrupt
+
     /*
     // Function: ISRunProgramInterrupt
     //
     // Task Description:
-    //  ...
+    // To read the entered filename and to create the process with the passed filename
     //
     // Input Parameters
     //  None
@@ -1421,22 +1474,23 @@ public class HYPO {
     //  None
     //
     // Function Return Value
-    //  OK - On successful execution
+    //  none
      */
     static void ISRunProgramInterrupt() {
         Scanner reader = new Scanner(System.in);
-   
+        //prompts anf reads the entered filename
         System.out.print("Enter filename: "); 
         String filename = reader.nextLine();
 
-        CreateProcess(filename, DefaultPriority);
+        CreateProcess(filename, DefaultPriority);//Callc create process function passes filename and defaultpriority
         return;
-    }
+    }//End of ISRunProgram function
+
     /*
     // Function: ISRinputCompletionInterrupt
     //
     // Task Description:
-    //  ...
+    //  Read the PID value and usingnio_getc to read one char from keyboard input
     //
     // Input Parameters
     //  None
@@ -1445,40 +1499,42 @@ public class HYPO {
     //  None
     //
     // Function Return Value
-    //  OK - On successful execution
+    //  
      */
     static void ISRinputCompletionInterrupt() {
         Scanner reader = new Scanner(System.in);
 
+        //Prompts and reads PID
         System.out.print("Enter PID: ");//Prompts
         long pid = reader.nextLong();//Reads Pid
 
-        long PCB;
+        long PCB;//Delares PCB variable
 
         if(SearchAndRemovePCBfromWQ(pid) != EndOfList) {//If PCB is found its removed
             PCB = SearchAndRemovePCBfromWQ(pid);
             char character = reader.next().charAt(0);//Reads one char
             RAM[(int) (PCB + 11)] = (long) character;//Stores char in GPR
-            RAM[(int) (PCB + 2)] = ReadyState;
-            InsertIntoRQ(PCB);
+            RAM[(int) (PCB + 2)] = ReadyState;//sets process to readystate
+            InsertIntoRQ(PCB);//inserts pcb into RQ
         }
-        else if(RQ != EndOfList)
+        else if(RQ != EndOfList)//If theres no match
         {
             PCB = RQ;
-            char character = reader.next().charAt(0);
-            RAM[(int) (PCB + 11)] = (long) character;
+            char character = reader.next().charAt(0);//reads one char from device keyboard
+            RAM[(int) (PCB + 11)] = (long) character;//stores char in GPR
         }
-        else 
+        else//if no match in WQ and RQ
         {
-            System.out.print("Error, Invalid Pid");
+            System.out.print("Error, Invalid Pid");//Display invalid pid error message
             return;
         }
-    }
+    }//End of ISRinputCompletionInterrupt function
+
     /*
     // Function: ISRoutputCompletionInterrupt
     //
     // Task Description:
-    //  ...
+    //  To read the pid and using the io_putc operation to display one char from the output device
     //
     // Input Parameters
     //  None
@@ -1487,7 +1543,7 @@ public class HYPO {
     //  None
     //
     // Function Return Value
-    //  OK - On successful execution
+    //  
      */
     static void ISRoutputCompletionInterrupt() {
         Scanner reader = new Scanner(System.in);
@@ -1495,30 +1551,31 @@ public class HYPO {
         System.out.print("Enter PID: ");//Prompts
         long pid = reader.nextLong();//Reads Pid
 
-        long PCB;
+        long PCB;//declared variable
 
         if(SearchAndRemovePCBfromWQ(pid) != EndOfList) {//If PCB is found its removed
             PCB = SearchAndRemovePCBfromWQ(pid);
-            System.out.print((char) RAM[(int) (PCB + 11)]);
-            RAM[(int) (PCB + 2)] = ReadyState;
-            InsertIntoRQ(PCB);
+            System.out.print((char) RAM[(int) (PCB + 11)]);//prints har in GPR
+            RAM[(int) (PCB + 2)] = ReadyState;//Sets process state to readystate
+            InsertIntoRQ(PCB);//inserts the pcb into RQ
         }
         else if(RQ == EndOfList) 
         {
             PCB = RQ;
-            System.out.print((char) RAM[(int) (PCB + 11)]);
+            System.out.print((char) RAM[(int) (PCB + 11)]);//Prints the char in the GPR
         }
         else
         {
-            System.out.print("Error, Invalid pid");
+            System.out.print("Error, Invalid pid");//displays invalid pid error message
             return;
         }
-    }
+    }//end of ISRoutputCompletionInterrupt function
+
     /*
     // Function: ISRshutdownSystem
     //
     // Task Description:
-    //  ...
+    // Terminate all processes in the WQ and RQ and exit 
     //
     // Input Parameters
     //  None
@@ -1527,54 +1584,62 @@ public class HYPO {
     //  None
     //
     // Function Return Value
-    //  OK - On successful execution
+    //  
      */
     static void ISRshutdownSystem() {
-
-        long ptr = RQ;
+        //terminates processes in RQ
+        long ptr = RQ;//ptr is pointed by RQ
 
         while(ptr != EndOfList) {
-            RQ = RAM[(int) (ptr + 0)];
-            TerminateProcess(ptr);
+            RQ = RAM[(int) (ptr + 0)];//set to next ptr
+            TerminateProcess(ptr);//Terminate function called and passes ptr
             ptr = RQ;
         }
 
-        ptr = WQ;
+        ptr = WQ;//ptr is pointed by WQ
 
         while(ptr != EndOfList) {
-            WQ = RAM[(int) (ptr + 0)];
-            TerminateProcess(ptr);
+            WQ = RAM[(int) (ptr + 0)];//sets to next ptr
+            TerminateProcess(ptr);//Terminate function called and passes ptr
             ptr = WQ;
         }
 
         return;
-    }
+    }//end of ISRshutdownSystem function
+
     /*
     // Function: SearchAndRemovePCBfromWQ
     //
     // Task Description:
-    //  ...
+    // To search WQ for a matched pid, if found the pid is removed from WQ
     //
     // Input Parameters
-    //  None
+    // pid
     //
     // Output Parameters
     //  None
     //
     // Function Return Value
-    //  OK - On successful execution
+    //  CurrentPCBptr
+    //  EndOfList
      */
     static long SearchAndRemovePCBfromWQ(long pid) {
         long currentPCBptr = WQ;
         long previousPCBptr = EndOfList;
 
-        while(currentPCBptr != EndOfList) {
+        //Searches WQ for the pid
+        while(currentPCBptr != EndOfList) 
+        {
+            //if a match is found its removed
             if(RAM[(int) (currentPCBptr + 1)] == pid) {
-                if(previousPCBptr == EndOfList) {
+                if(previousPCBptr == EndOfList) 
+                {
+                    //first pid
                     WQ = RAM[(int) (currentPCBptr + 0)];
                 }
                 else 
                 {
+                    //not first
                     RAM[(int) (previousPCBptr + 0)] = RAM[(int) (currentPCBptr + 0)];
                 }
                 RAM[(int) (currentPCBptr + 0)] = EndOfList;
@@ -1584,69 +1649,71 @@ public class HYPO {
             currentPCBptr = RAM[(int) (currentPCBptr + 0)];
         }
 
-        System.out.print("Error, display PID not found");
+        System.out.print("Error, display PID not found");//displays pid not found error message
 
         return EndOfList;
-    }
+    }//End of SearchAndRemovePCBfromWQ function
+
     /*
     // Function: SystemCall
     //
     // Task Description:
-    //  ...
+    //  To run the correct process depending on the user entered value fo systemcallid
     //
     // Input Parameters
-    //  None
+    // SystemCallID         input value of ID
     //
     // Output Parameters
     //  None
     //
     // Function Return Value
-    //  OK - On successful execution
+    // status               status of the systemcall
      */
     static long SystemCall(long SystemCallID) {
-        PSR = OSMode;
+        PSR = OSMode;//sets system to OS mode
 
-        System.out.println("System call ID: " + SystemCallID);
+        System.out.println("System call ID: " + SystemCallID);//displays systemcallID
 
-        Long status = OK;
+        Long status = OK;//declares long status and sets to ok
 
         switch((int) SystemCallID)
         {
-            case 1:
+            case 1://Create Process
                 System.out.print("Create Process System Call Not Implemented");
                 break;
-            case 2:
+            case 2://Delete process
                 System.out.print("Delete Process System Call Not Implemented");
                 break;
-            case 3:
+            case 3://Process inquiry
                 System.out.print("Process Inquiry System Call Not Implemented");
                 break;
-            case 4:
+            case 4://Dynamic memory Allocation
                 status = MemAllocSystemCall();
                 break;
-            case 5:
+            case 5://Free Dynamic memory Allocation
                 status = MemFreeSystemCall();
                 break;
-            case 8:
+            case 8://io_getc
                 status = io_getcSystemCall();
                 break;
-            case 9:
+            case 9://io_putc
                 status = io_putcSystemCall();
                 break;
-            default:
+            default://Invalid system ID
                 System.out.print("Error, Invalid System call ID");
                 break;
         }
 
-        PSR = UserMode;
+        PSR = UserMode;//sets system mode to usermode
 
-        return status;
-    }
+        return status;//returns status
+    }//End of SystemCallID function
+
     /*
     // Function: MemAllocSystemCall
     //
     // Task Description:
-    //  ...
+    // To allocate memory from userfreelist
     //
     // Input Parameters
     //  None
@@ -1655,41 +1722,45 @@ public class HYPO {
     //  None
     //
     // Function Return Value
-    //  OK - On successful execution
+    // ERROR_INVALID_MEMORY_SIZE        Invalid memory size error message
+    // GPR[0]                           First value of GPR
      */
     static long MemAllocSystemCall() {
         AllocateUserMemory(UserFreeList);
 
-        long Size = GPR[2];
+        long Size = GPR[2];//Decalre long size and set it to GPR2 value
 
-        if(Size < 1) {
-            System.out.print("Error, Invalid Size");
-            return ERROR_INVALID_MEMORY_SIZE;
+        if(Size < 1)//Checks for size out of range
+        {
+            System.out.print("Error, Invalid Size");//Displays Invalid size error message
+            return ERROR_INVALID_MEMORY_SIZE;//error code < 0
         }
 
-        if(Size == 1) {
+        if(Size == 1)//Checks for size 1 and changes to 2
+        {
             Size = 2;
         }
 
         GPR[1] = AllocateUserMemory(Size);
 
         if(GPR[1] < 0) {
-            GPR[0] = GPR[1];
+            GPR[0] = GPR[1];//sets GPR0 to return status
         }
         else 
         {
-            GPR[0] = OK;
+            GPR[0] = OK;//Sets GPR0 to ok
         }
 
         System.out.print(MemAllocSystemCall() + GPR[0] + GPR[1] + GPR[2]);
 
         return GPR[0];
-    }
+    }//End of MemAllocaSystemCall function
+
     /*
     // Function: MemFreeSystemCall
     //
     // Task Description:
-    //  ...
+    //  Returns the dynamically allocated user free memory to the user free list
     //
     // Input Parameters
     //  None
@@ -1698,32 +1769,34 @@ public class HYPO {
     //  None
     //
     // Function Return Value
-    //  OK - On successful execution
+    // GPR[0]       Value of the first GPR
      */
     static long MemFreeSystemCall() {
         AllocateUserMemory(UserFreeList);
 
-        long Size = GPR[2];
+        long Size = GPR[2];//Declares Long size and sets it GPR2 value
 
         if(Size < 1) {
-            System.out.print("Error, Invalid Size");
-            return ERROR_INVALID_MEMORY_SIZE;
+            System.out.print("Error, Invalid Size");//Displays invalid size error message
+            return ERROR_INVALID_MEMORY_SIZE;//error code < 0
         }
 
-        if(Size == 1) {
+        if(Size == 1)//Check size 1 and change it to size 2
+        {
             Size = 2;
         }
 
-        GPR[0] = FreeUserMemory(GPR[1], Size);
+        GPR[0] = FreeUserMemory(GPR[1], Size);//calls free user memory function passes GPR 1 and size
 
-        System.out.print(MemFreeSystemCall() + GPR[0] + GPR[1] + GPR[2]);
+        System.out.print(MemFreeSystemCall() + GPR[0] +", " + GPR[1] + ", " + GPR[2]);//Prints GPR 1 2 and 3
         return GPR[0];
-    }
+    }//End of MEMFreeSystemCall
+    
     /*
     // Function: io_getcSystemCall
     //
     // Task Description:
-    //  ...
+    // To read one char from a standard input device keyboard
     //
     // Input Parameters
     //  None
@@ -1732,16 +1805,17 @@ public class HYPO {
     //  None
     //
     // Function Return Value
-    //  OK - On successful execution
+    // StartOfInputOperation 
      */
     static long io_getcSystemCall() {
         return StartOfInputOperation;
     }
+
     /*
     // Function: io_putcSystemCall
     //
     // Task Description:
-    //  ...
+    //  To display one char of the standard output device
     //
     // Input Parameters
     //  None
@@ -1750,7 +1824,7 @@ public class HYPO {
     //  None
     //
     // Function Return Value
-    //  OK - On successful execution
+    // StartOfOutputOperation
      */
     static long io_putcSystemCall() {
         return StartOfOutputOperation;
