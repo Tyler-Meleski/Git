@@ -1,6 +1,6 @@
-//Tyler Meleski
+//Justin Lamberson, Tyler Meleski, Khalid Ibrahim
 //Homework 2
-//Date:
+//Date: 4/17/24
 
 /*
 Description: 
@@ -16,11 +16,12 @@ public class HYPO {
     static long opAddress;
     static long opValue;
     static long ProcessID = 1;
-    static long WQ;
+    static long WQ = -1;
     static long RQ;
     static long Waiting;
     static long OSFreeList;
     static long UserFreeList;
+
 
     //Declaration of error codes
     static final long OK = 0;
@@ -54,6 +55,7 @@ public class HYPO {
     static final long StartOfOutputOperation = 5619;
 
     /*
+    //Written by: Justin Lamberson, Tyler Meleski
     // Function: Main
     //
     // Task Description:
@@ -78,12 +80,14 @@ public class HYPO {
         long returnValue;
         long executionCompletionStatus;
 
+        boolean firstCycle = false;
+
         //FetchOperand(0, 3);
 
         //DumpMemory("Test message", 20000, 5); //Test to make sure that DumpMemory throws the proper exception
 
         //DumpMemory("Second Test", 500, 127);
-        while(fileLoaded){
+        /*while(fileLoaded){
             System.out.println("Please insert name of file for execution:");
             returnValue = AbsoluteLoader(reader.nextLine());
             //System.out.println(returnValue);
@@ -95,7 +99,7 @@ public class HYPO {
 
         DumpMemory("After Loading Program", 0, 99);
         executionCompletionStatus = CPUExecuteProgram();
-        DumpMemory("After program execution", 0, 99);
+        DumpMemory("After program execution", 0, 99);*/
 
         //return(executionCompletionStatus); //main method cannot have a return type
 
@@ -103,10 +107,12 @@ public class HYPO {
 
         long status;
 
+        long processInterruptStatus;
+
         while(notShutodwn){
             //Check and process interrupt
-            long processInterruptStatus = CheckAndProcessInterrupt();
-            System.out.println("Infinite test");
+            processInterruptStatus = CheckAndProcessInterrupt();
+            //System.out.println("Infinite test");
             if(processInterruptStatus == 2){
                 notShutodwn = false;
                 break;
@@ -114,9 +120,14 @@ public class HYPO {
 
             //Dump RQ and WQ
             System.out.println("RQ: Before CPU scheduling");
-            PrintQueue(RQ);
+            if(!firstCycle){
+                PrintQueue(RQ);
+            }
             System.out.println("WQ: Before CPU scheduling");
-            PrintQueue(WQ);
+            if(!firstCycle){
+                PrintQueue(WQ); //TODO: Reinstate printqueue after fix
+            }
+
             DumpMemory("Dynamic Memory Area before CPU scheduling\n", 0, 2999);
 
             //Select next process from RQ to give to CPU
@@ -126,7 +137,7 @@ public class HYPO {
             Dispatcher(Runningptr);
 
             System.out.println("RQ: After selecting process from RQ");
-            PrintQueue(RQ);
+            //PrintQueue(RQ);
 
             //Dump Running PCB and CPU Context passing  Running PCB ptr as argument
             PrintPCB(Runningptr);
@@ -154,6 +165,8 @@ public class HYPO {
                 InsertIntoWQ(Runningptr);
                 EndOfList = Runningptr;
             }
+
+            //1firstCycle = false;
 
         } //End of while not shutdown loop 
 
@@ -196,7 +209,8 @@ public class HYPO {
         RAM[6000] = EndOfList;
         RAM[6001] = 4000; //Size of block given in class
 
-        //CreateProcess(null, 0); //TODO: Reinstate later
+        System.out.println(RAM[6000]);
+        CreateProcess("nullProcess.txt", 0);
 
         return;
     }
@@ -298,7 +312,7 @@ public class HYPO {
 
         boolean continueExecution = true;
         while(continueExecution && TimeLeft > 0){
-
+            //System.out.print(TimeLeft);
             //Fetch Cycle
             // Fetch (read) the first word of the instruction pointed by PC into MBR
             // Instruction needing more words (2 word and 3 word instructions) are fetched
@@ -387,6 +401,7 @@ public class HYPO {
                         RAM[(int) op1Address] = result;
                     }
                     clock += 3;
+                    TimeLeft -= 3;
                     break;
                 case 2: //Subtract
                     status = fetchOperand(op1Mode, op1GPR);
@@ -418,6 +433,7 @@ public class HYPO {
                         RAM[(int) op1Address] = result;
                     }
                     clock += 3;
+                    TimeLeft -= 3;
                     break;
                 case 3: //Multiply
                     status = fetchOperand(op1Mode, op1GPR);
@@ -449,6 +465,7 @@ public class HYPO {
                         RAM[(int) op1Address] = result;
                     }
                     clock += 6;
+                    TimeLeft -= 6;
                     break;
                 case 4: //Divide
                     status = fetchOperand(op1Mode, op1GPR);
@@ -486,6 +503,7 @@ public class HYPO {
                         RAM[(int) op1Address] = result;
                     }
                     clock += 6;
+                    TimeLeft -= 6;
                     break;
                 case 5: //Move
                     status = fetchOperand(op1Mode, op1GPR);
@@ -516,6 +534,7 @@ public class HYPO {
                         RAM[(int) op1Address] = op2Value;
                     }
                     clock += 2;
+                    TimeLeft -= 2;
                     break;
                 case 6: //Branch or jump on instruction
                     if (PC < 0 || PC > 9999) {
@@ -525,6 +544,7 @@ public class HYPO {
                         PC = RAM[(int) PC];
                     }
                     clock += 2;
+                    TimeLeft -= 2;
                     break;
                 case 7: //Branch on minus
                     status = fetchOperand(op1Mode, op1GPR);
@@ -547,6 +567,7 @@ public class HYPO {
                         PC++;
                     }
                     clock += 4;
+                    TimeLeft -= 4;
                     break;
                 case 8: //Branch on plus
                     status = fetchOperand(op1Mode, op1GPR);
@@ -569,6 +590,7 @@ public class HYPO {
                         PC++;
                     }
                     clock += 4;
+                    TimeLeft -= 4;
                     break;
                 case 9: //Branch on zero
                     status = fetchOperand(op1Mode, op1GPR);
@@ -591,6 +613,7 @@ public class HYPO {
                         PC++;
                     }
                     clock += 4;
+                    TimeLeft -= 4;
                     break;
                 case 10: //Push - if stack is not full
                     status = fetchOperand(op1Mode, op1GPR);
@@ -609,6 +632,7 @@ public class HYPO {
                     SP++;
                     RAM[(int) SP] = op1Value;
                     clock += 2;
+                    TimeLeft -= 2;
                     break;
                 case 11: //Pop - if stack not empty
                     if (SP < 0 || SP > 9999) {
@@ -627,6 +651,7 @@ public class HYPO {
 
                     SP--;
                     clock += 2;
+                    TimeLeft -= 2;
                     break;
                 case 12: //System call
                     status = fetchOperand(op1Mode, op1GPR);
@@ -783,6 +808,7 @@ public class HYPO {
         System.out.println("Clock: " + clock + "\nPSR: " + PSR);
     }
      /*
+    // Written by: Tyler Meleski
     // Function: CreateProcess
     //
     // Task Description:
@@ -834,15 +860,16 @@ public class HYPO {
 
         RAM[(int) (PCBptr + 4)] = priority;//sets priority
 
-        DumpMemory("Program Area", 0, 99);//Dumps program area
+        DumpMemory("Program Area", 0, 200);//Dumps program area
 
         PrintPCB(PCBptr);//Prints PCB passes ptr
-        InsertIntoRQ(PCBptr);//Insert pcb into rq passng the pointer 
+        InsertIntoRQ(PCBptr);//Insert pcb into rq passing the pointer
 
         return OK;
     }//End of CreateProcess function
 
     /*
+    // Written by: Khalid Ibrahim
     // Function: InitializePCB
     //
     // Task Description:
@@ -872,6 +899,7 @@ public class HYPO {
     }//End of initializePCB function
 
     /*
+    // Written By: Tyler Meleski
     // Function: PrintPCB
     //
     // Task Description:
@@ -913,6 +941,7 @@ public class HYPO {
     }//End of PrintPCB function
 
     /*
+    // Written by: Tyler Meleski
     // Function: PrintQueue
     //
     // Task Description:
@@ -928,24 +957,27 @@ public class HYPO {
     // Function Return Value
     //  OK - On successful execution
      */
-
     static long PrintQueue(long Qptr) {
         long currentPCBPtr = Qptr;//Sets currentPCBptr = Qptr
 
-        if (currentPCBPtr == EndOfList) {
+        if (currentPCBPtr == EndOfList  || currentPCBPtr == -1) {
             System.out.println("Empty list");//Displays empty list message
             return OK;
         }
         //Walks thru queue
         //Prints each PCB as we move on
         while(currentPCBPtr != EndOfList) {
+            //System.out.println("ERROR\n");
             PrintPCB(currentPCBPtr);//Calls PrintPCB function pass current ptr
             currentPCBPtr = RAM[(int) currentPCBPtr];
         }//end of while loop
         return OK;
     }//End of PrintQueue function
-
+    
+    //Written By: Khalid Ibrahim
+    //Function:
     /*InsertIntoRQ
+    //
     //
     // Task Description:
     // To insert the PCB based on its priortiy according the CPU algorithm
@@ -1005,6 +1037,7 @@ public class HYPO {
     }//End of InsertIntoRQ function
 
     /*
+    //Written by: Khalid Ibrahim
     // Function: InsertIntoWQ
     //
     // Task Description:
@@ -1035,6 +1068,7 @@ public class HYPO {
     }//end of InsertIntoWQ function
 
     /*
+    // Written by: Tyler Meleski
     // Function: SelectProcessFromRQ
     //
     // Task Description:
@@ -1063,6 +1097,7 @@ public class HYPO {
     }//End of SelectProcessFromRQ function
 
     /*
+    // Written by: Tyler Meleski
     // Function: SaveContext
     //
     // Task Description:
@@ -1097,6 +1132,7 @@ public class HYPO {
     }//End of SaveContext function
 
     /*
+    // Written by: Tyler Meleski
     // Function: Dispatcher
     //
     // Task Description:
@@ -1133,6 +1169,7 @@ public class HYPO {
     }//End of Dispatcher function
 
     /*
+    // Written by: Khaid Ibrahim
     // Function: Terminate Process
     //
     // Task Description:
@@ -1163,6 +1200,7 @@ public class HYPO {
     }//End of TerminateProcess function
 
     /*
+    // Written by: Tyler Meleski
     // Function: AllocateOSMemory
     //
     // Task Description:
@@ -1245,6 +1283,7 @@ public class HYPO {
     }//End of AllocateOSMemory function
 
     /*
+    // Written by: Khalid Ibrahim
     // Function: FreeOSMemory
     //
     // Task Description:
@@ -1284,6 +1323,7 @@ public class HYPO {
     }//End of FreeOSMemory function
 
     /*
+    // Written by: Tyler Meleski
     // Function: AllocateUserMemory
     //
     // Task Description:
@@ -1366,6 +1406,7 @@ public class HYPO {
     }//End of AllocateUserMemory function
 
     /*
+    // Written by: Khlaid Ibrahim
     // Function: FreeUserMemory
     //
     // Task Description:
@@ -1407,6 +1448,7 @@ public class HYPO {
     }//End of FreeUserMemory function
 
     /*
+    // Written by: Tyler Meleski
     // Function: CheckAndProcessInterrupt
     //
     // Task Description:
@@ -1425,7 +1467,7 @@ public class HYPO {
         Scanner reader = new Scanner(System.in);
        
         //Displays the possible interrupts
-        System.out.println("Enter Interrupt ID: ");
+
         System.out.println("Interrupt ID's:"); 
         System.out.println("ID: 0 - No Interrupt");
         System.out.println("ID: 1 - Run program");
@@ -1434,8 +1476,9 @@ public class HYPO {
         System.out.println("ID: 4 - Output Operation Completion(io_putc");
 
         //Prompts user to enter the interrupt ID
+        System.out.print("Enter Interrupt ID: ");
         long interruptID = reader.nextLong();
-        System.out.println("Read Interrupt value: " + interruptID);//Reads and displays the interrupt ID
+        System.out.println("\nRead Interrupt value: " + interruptID);//Reads and displays the interrupt ID
 
         switch((int) interruptID)
         {
@@ -1462,6 +1505,7 @@ public class HYPO {
     }//End of CheckAndProcessInterrupt
 
     /*
+    // Written By: Tyler Meleski
     // Function: ISRunProgramInterrupt
     //
     // Task Description:
@@ -1487,6 +1531,7 @@ public class HYPO {
     }//End of ISRunProgram function
 
     /*
+    // Khalid Ibrahim
     // Function: ISRinputCompletionInterrupt
     //
     // Task Description:
@@ -1531,6 +1576,7 @@ public class HYPO {
     }//End of ISRinputCompletionInterrupt function
 
     /*
+    // Written by: Khalid Ibrahim
     // Function: ISRoutputCompletionInterrupt
     //
     // Task Description:
@@ -1572,6 +1618,7 @@ public class HYPO {
     }//end of ISRoutputCompletionInterrupt function
 
     /*
+    // Written by: Tyler Meleski
     // Function: ISRshutdownSystem
     //
     // Task Description:
@@ -1608,6 +1655,7 @@ public class HYPO {
     }//end of ISRshutdownSystem function
 
     /*
+    // Written by: Tyler Meleski
     // Function: SearchAndRemovePCBfromWQ
     //
     // Task Description:
@@ -1655,6 +1703,7 @@ public class HYPO {
     }//End of SearchAndRemovePCBfromWQ function
 
     /*
+    // Written by: Justin Lamberson, Tyler Meleski
     // Function: SystemCall
     //
     // Task Description:
@@ -1710,6 +1759,7 @@ public class HYPO {
     }//End of SystemCallID function
 
     /*
+    // Written by: Tyler Meleski
     // Function: MemAllocSystemCall
     //
     // Task Description:
@@ -1728,7 +1778,7 @@ public class HYPO {
     static long MemAllocSystemCall() {
         AllocateUserMemory(UserFreeList);
 
-        long Size = GPR[2];//Decalre long size and set it to GPR2 value
+        long Size = GPR[2];//Declare long size and set it to GPR2 value
 
         if(Size < 1)//Checks for size out of range
         {
@@ -1751,12 +1801,13 @@ public class HYPO {
             GPR[0] = OK;//Sets GPR0 to ok
         }
 
-        System.out.print(MemAllocSystemCall() + GPR[0] + GPR[1] + GPR[2]);
+        System.out.print(GPR[0] + GPR[1] + GPR[2]);
 
         return GPR[0];
     }//End of MemAllocaSystemCall function
 
     /*
+    // Written by: Tyler Meleski
     // Function: MemFreeSystemCall
     //
     // Task Description:
@@ -1793,6 +1844,7 @@ public class HYPO {
     }//End of MEMFreeSystemCall
     
     /*
+    // Written by: Khalid Ibrahim
     // Function: io_getcSystemCall
     //
     // Task Description:
@@ -1812,6 +1864,7 @@ public class HYPO {
     }
 
     /*
+    // Written by: Khalid Ibrahim
     // Function: io_putcSystemCall
     //
     // Task Description:
