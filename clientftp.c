@@ -106,12 +106,16 @@ int main(
 	do
 	{
 		printf("my ftp> ");
-		strcpy(userCmd, "quit");  /* This statement must be replaced in homework #2 */
-				/* to read the command from the user. Use gets or readln function */
+		fgets(userCmd, sizeof(userCmd), stdin);
 		
 	        /* Separate command and argument from userCmd */
-	        strcpy(cmd, userCmd);  /* Modify in Homework 2.  Use strtok function */
-	        strcpy(argument, "");  /* Modify in Homework 2.  Use strtok function */
+	        strcpy(cmd, strtok(userCmd, " "));
+	        strcpy(argument, strtok(NULL, " "));
+
+		if (strcmp(cmd, "quit") == 0) {
+            		printf("Exiting the FTP client.\n");
+            		break;  
+        }
 
 		/* send the userCmd to the server */
 		status = sendMessage(ccSocket, userCmd, strlen(userCmd)+1);
