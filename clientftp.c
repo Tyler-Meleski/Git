@@ -1,4 +1,4 @@
-* 
+/* 
  * Client FTP program
  *
  * NOTE: Starting homework #2, add more comments here describing the overall function
