@@ -139,14 +139,18 @@ int main(
  * See Homework#2 for list of ftp commands to implement.
  */
 	    /* Separate command and argument from userCmd */
-	    strcpy(cmd, userCmd);  /* Modify in Homework 2.  Use strtok function */
-	    strcpy(argument, "");  /* Modify in Homework 2.  Use strtok function */
+	    strcpy(cmd, strtok(userCmd, " "));  // Extract command
+       	    strcpy(argument, strtok(NULL, " ")); // Extract argument if any
 
 	    /*
  	     * ftp server sends only one reply message to the client for 
 	     * each command received in this implementation.
 	     */
-	    strcpy(replyMsg,"200 cmd okay\n");  /* Should have appropriate reply msg starting HW2 */
+	    if (strcmp(cmd, "quit") == 0) {
+            	strcpy(replyMsg, "221 Goodbye!\n");  // Reply for QUIT command
+            } else {
+            	strcpy(replyMsg, "200 Command okay\n"); // Default response for other commands
+            }
 	    status=sendMessage(ccSocket,replyMsg,strlen(replyMsg) + 1);	/* Added 1 to include NULL character in */
 				/* the reply string strlen does not count NULL character */
 	    if(status < 0)
