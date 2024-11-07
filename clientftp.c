@@ -33,6 +33,7 @@ int sendMessage(int s, char *msg, int msgSize);
 int receiveMessage(int s, char *buffer, int bufferSize, int *msgSize); 
 
 /* List of all global variables */
+
 char userCmd[1024]; /* user typed ftp command line read from keyboard */
 char cmd[1024]; /* ftp command extracted from userCmd */
 char argument[1024]; /* argument extracted from userCmd */
@@ -70,12 +71,12 @@ int main(
 	int dcSocket; 
 	int msgSize; /* size of the reply message received from the server */
 	int status;  
-	int listenSocket;
+	int lSocket;
 	int ccPort; 
 	char buffer[100]; 
 	FILE *fp; 
-	bool userCheck = false; 
-	bool passCheck = false; 
+	bool users = false; 
+	bool passes = false; 
 	/*
 	 * NOTE: without \n at the end of format string in printf,
 	 * UNIX will buffer (not flush)
@@ -87,13 +88,12 @@ int main(
 	printf("Calling clntConnect to connect to the server\n");	/* changed text */
 
 	status = clntConnect("127.0.0.1", &ccSocket); 
-
 	if (status != 0) {
 		printf("Connection to server failed, exiting main.\n");
 		return (status);
 	}
 
-	status = svcInitServer(&listenSocket); 
+	status = svcInitServer(&lSocket); 
 
 	if (status != 0) { 
 		return (status);
@@ -124,13 +124,13 @@ int main(
 
 		if (strcmp(cmd, "user") == 0) {
 			if (strcmp(userCmd, "user") != 0) { /* if no argument is provided, then unsuccessful try, since user needs argument - username */
-				userCheck = true;
+				users = true;
 			}
 		}
 
 		else if (strcmp(cmd, "pass") == 0) {
 			if (strcmp(userCmd, "pass") != 0) { /* if no argument is provided, then unsuccessful try, since pass needs argument */
-				passCheck = true;
+				passes = true;
 			}
 		}
 
@@ -138,7 +138,7 @@ int main(
 		 * if user has entered username and password, only then can we implement or receive anything for send or recieve cmds
 		 * part of validation for send and recv cmds step
 		 */
-		if (userCheck == true && passCheck == true) {
+		if (users == true && passes == true) {
 
 			/*
 			 * Function Purpose: send file from client to server
@@ -155,7 +155,7 @@ int main(
 			if ((strcmp(cmd, "send") == 0) || (strcmp(cmd, "put") == 0)) {
 				/* If you enter send cmd with an argument proceed, otherwise (else) there is no argument so the cmd cannot be executed. In that case print invalid syntax since cmd is correct but syntax is not */
 				if ((strcmp(userCmd, "send") != 0) || (strcmp(userCmd, "put") != 0)) {
-					dcSocket = accept(listenSocket, NULL, NULL); /* use accept() to listen for connection via socket */
+					dcSocket = accept(lSocket, NULL, NULL); /* use accept() to listen for connection via socket */
 					fp = fopen("my_quotes_cs.txt", "r+"); /* open the file from client side */
 					if (fp != NULL) { /* validate that file pointer is not null, file is not empty */
 						printf("File opened\n");
@@ -184,7 +184,7 @@ int main(
 			else if ((strcmp(cmd, "recv") == 0) || (strcmp(cmd, "get") == 0)) {
 				/* If you enter recv cmd with an argument proceed, otherwise (else) there is no argument so the cmd cannot be executed. In that case print invalid syntax since cmd is correct but syntax is not */
 				if ((strcmp(userCmd, "recv") != 0) || (strcmp(userCmd, "get") != 0)) {
-					dcSocket = accept(listenSocket, NULL, NULL); /* establish the data connection using socket / listen for socket */
+					dcSocket = accept(lSocket, NULL, NULL); /* establish the data connection using socket / listen for socket */
 					fp = fopen("movie_stars_sc.txt", "w+"); // open the original file on client side
 					if (fp != NULL) {
 						printf("File opened\n");
@@ -218,7 +218,7 @@ int main(
 
 	printf("Closing control connection\n");
 	close(ccSocket); /* close control connection socket */
-	close(listenSocket); 
+	close(lSocket); 
 	printf("Exiting client main \n");
 
 	return (status);
