@@ -14,9 +14,6 @@
 #include <sys/socket.h>
 #include <netdb.h>
 #include <string.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdbool.h>
 
 #define SERVER_FTP_PORT 2050
 #define DATA_FTP_PORT 2051
