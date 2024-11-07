@@ -18,11 +18,10 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-/* The port that the client will be connecting to, the port (logical channel) identifies a type of network service */
-#define CONTROL_CONNECTION_FTP_PORT 4002
-#define DATA_CONNECTION_FTP_PORT 4001
+#define SERVER_FTP_PORT 2050
+#define DATA_FTP_PORT 2051
 
-/* OK and error codes with values */
+/* Error and OK codes */
 #define OK 0
 #define ER_INVALID_HOST_NAME -1
 #define ER_CREATE_SOCKET_FAILED -2
@@ -36,6 +35,7 @@ int clntConnect(char *serverName, int *s); /* connects you to the client */
 int sendMessage(int s, char *msg, int msgSize); /* sends cmd and arg to server */
 int receiveMessage(int s, char *buffer, int bufferSize, int *msgSize); /* receive reply from server */
 
+/* List of all global variables */
 char userCmd[1024]; /* user typed ftp command line read from keyboard */
 char cmd[1024]; /* ftp command extracted from userCmd */
 char argument[1024]; /* argument extracted from userCmd */
@@ -62,19 +62,23 @@ char temp[1024]; /* char array will hold a copy of the userCmd array for divisio
  *	OK	- Successful execution until QUIT command from client
  *	N	- Failed status, value of N depends on the function called or cmd processed
  */
-int main(int argc, char *argv[]) {
-
+int main(
+	int argc,
+	char *argv[]
+	) 
+{
+	/* List of local varibale */
+	
 	int ccSocket; /* Control connection socket - to be used in all client communication */
-	int dcSocket; /* data connection socket - to be used to transfer files between hosts*/
+	int dcSocket; 
 	int msgSize; /* size of the reply message received from the server */
-	int status; /* Variable to hold status of strcmp, stores integer. If variable has 0, then it can indicate success to program, else not */
-	int listenSocket; /* holds socket connection info */
-	int ccPort; /* Store port number */
-	char buffer[100]; /* amount of bytes of a file */
-	FILE *fp; /* create file pointer to work with files in program */
-	bool userCheck = false; /* boolean variable to check if user has entered username, set to false until user enters correct ftp username */
-	bool passCheck = false; /* boolean variable to check if user has entered password, set to false until user enters correct ftp password */
-
+	int status;  
+	int listenSocket;
+	int ccPort; 
+	char buffer[100]; 
+	FILE *fp; 
+	bool userCheck = false; 
+	bool passCheck = false; 
 	/*
 	 * NOTE: without \n at the end of format string in printf,
 	 * UNIX will buffer (not flush)
@@ -82,19 +86,19 @@ int main(int argc, char *argv[]) {
 	 */
 	printf("Started execution of client ftp\n");
 
-	/* listen for data connection */
+	/* Connect to client ftp*/
+	printf("Calling clntConnect to connect to the server\n");	/* changed text */
 
-	status = clntConnect("10.3.200.17", &ccSocket); /* open cc Socket, connect to socket */
+	status = clntConnect("127.0.0.1", &ccSocket); 
 
-	/* If status value is not 0 then couldn't connect -> program terminates */
 	if (status != 0) {
 		printf("Connection to server failed, exiting main.\n");
 		return (status);
 	}
 
-	status = svcInitServer(&listenSocket); /* listen for data connection, connect to server */
+	status = svcInitServer(&listenSocket); 
 
-	if (status != 0) { /* Condition for successful connection to server */
+	if (status != 0) { 
 		return (status);
 	}
 
@@ -106,26 +110,16 @@ int main(int argc, char *argv[]) {
 	 * until quit command is typed by the user.
 	 */
 
-	/*
-	 * do while loop, enter an ftp command and argument, separate cmd and argument.
-	 * Then send command and argument to server-side
-	 * repeat loop until user enters quit
-	 */
-
 	do {
-		printf("my ftp> "); /* prompt user to enter cmd here */
-		gets(userCmd); /* take the cmd input here */
-
-		/*
-		 * seperate cmd/args using strtok() (tokenize)
-		 * copy userCmd (string containing cmd and argument) into temp array so that original array is not touched
-		 * break cmd into cmd and argument (by space). So everything before space (delimeter) will be assigned to cmd array and everything after would go into argument array
-		 */
+		printf("my ftp> "); 
+		gets(userCmd); 
+				/* to read the command from the user. Use gets or readln function 
+		 /* Separate command and argument from userCmd */
 		strcpy(temp, userCmd);
 		char *cmd = strtok(temp, " ");
 		char *argument = strtok(NULL, " ");
 
-		/* send the userCmd to the server using sendMessage() which uses socket */
+		/* send the userCmd to the server */
 		status = sendMessage(ccSocket, userCmd, strlen(userCmd) + 1);
 		if (status != OK) {
 			break;
@@ -218,6 +212,7 @@ int main(int argc, char *argv[]) {
 
 		}
 
+		/* Receive reply message from the the server */
 		status = receiveMessage(ccSocket, replyMsg, sizeof(replyMsg), &msgSize);
 		if (status != OK) {
 			break;
@@ -226,11 +221,11 @@ int main(int argc, char *argv[]) {
 
 	printf("Closing control connection\n");
 	close(ccSocket); /* close control connection socket */
-	close(listenSocket); /* close data connection socket */
+	close(listenSocket); 
 	printf("Exiting client main \n");
 
 	return (status);
-}
+} /* end main() */
 
 /*
  * svcInitServer
