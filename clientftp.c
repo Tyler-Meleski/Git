@@ -110,7 +110,7 @@ int main(
 	do {
 		printf("my ftp> "); 
 		gets(userCmd); 
-				/* to read the command from the user. Use gets or readln function 
+				/* to read the command from the user. Use gets or readln function */
 		 /* Separate command and argument from userCmd */
 		strcpy(hold, userCmd);
 		char *cmd = strtok(hold, " ");
