@@ -142,44 +142,216 @@ int main(int argc,char *argv[])
 
 		char *pass[20] = { "Computer", "televison", "friday", "admin",
 				"framingham1", "password", "root", "pizza", "","qwerty123" };
-
  
-		
+		 * /*This block of code has the user login with password. Test for cmd to be pass, then compare argument of user cmd to pass array location userVar (which is the location of the username entered and found),
+		 * search for password in array, must match the password at array 
+		 */
 )	    /* Separate command and argument from userCmd */
 	    strcpy(cmd, userCmd);  /* Modify in Homework 2.  Use strtok function */
 	    strcpy(argument, "");  /* Modify in Homework 2.  Use strtok function */
 		 char *whatCMD = strtok(temp, " "); 
 		 char *whatArg = strtok(NULL, " ")
-	    /*
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
- 	     * ftp server sends only one reply message to the client for 
+	    
+		if (strcmp(cmd, "user") == 0)
+		{
+			for (int x = 0; x < usersLength - 2; x++) 
+			{
+				if (strcmp(argument, users[x]) == 0) 
+				{
+					strcpy(replyMsg, "ftp Username correct\n200 cmd OK\n");
+					userVar = x;
+					checkUser = true;
+					
+					break;
+				}
+			}
+
+			if (checkUser == false || (strcmp(argument, "") == 0)) 
+			{
+				strcpy(replyMsg, "Invalid ftp username\nUsername not found\n");
+				printf("Invalid ftp username\nUsername not found\n");
+			}
+		}			
+		else if (strcmp(cmd, "pass") == 0) 
+		{  /*If the cmd alone is equal to 'pass' enter conditional statement */
+			
+			if (checkUser == false) 
+			{
+				strcpy(replyMsg,"Please enter a username first \n");
+			} 
+			else if (strcmp(argument, pass[userVar]) == 0) 
+			{
+				strcpy(replyMsg,"Password correct\nLogin successful\n200 cmd OK\n");
+				checkPass = true;
+			} 
+			else if (checkPass == false) 
+			{
+				strcpy(replyMsg,"Invalid password for the user\nLogin failed. Please enter username and password.\n");
+			}
+		}
+ 	     /* ftp server sends only one reply message to the client for 
 	     * each command received in this implementation.
 	     */
 	    strcpy(replyMsg,"200 cmd okay\n");  /* Should have appropriate reply msg starting HW2 */
 	    status=sendMessage(ccSocket,replyMsg,strlen(replyMsg) + 1);	/* Added 1 to include NULL character in */
 				/* the reply string strlen does not count NULL character */
-	    if(status < 0)
+    if(status < 0)
 	    {
 			printf("Receive message has failed. Closing server connection" ;
 			printf("Server ftp is closing. \n");
 		break;  /* exit while loop */
 	    }
 	}
+  /* This block of code will only work if the user was able to login with their password. */
+	if(checkUser = true && checkPass== true;)
+	{
+		if (strcmp(cmd, "mkdir") == 0) {
+				cmdCheck = true;
+				status = system(userCmd);
+				if (status == 0) 
+				{
+					strcpy(replyMsg, "200 cmd OK\n");
+				}
+				else 
+				{
+					strcpy(replyMsg, "500 invalid syntax\nCommand Failed\n");
+				}
+			}
+
+			/* This block tests the rmdir cmd, check cmd, then do a system call to perform action
+			 * and send replymsg to client if successful
+			 * cmd test 7, example 'ls', 'rmdir abc', 'ls'
+			 * Jon Petani implemented this command
+			 */
+			else if (strcmp(cmd, "rmdir") == 0) 
+			{
+				cmdCheck = true;
+				status = system(userCmd);
+				if (status == 0) 
+				{
+					strcpy(replyMsg, "200 cmd OK\n");
+				}
+				else 
+				{
+					strcpy(replyMsg, "500 invalid syntax\nCommand Failed\n");
+				}
+			}
+			else if (strcmp(cmd, "dir") == 0) {
+				cmdCheck = true;
+				status = system("dir > diroutput.txt");
+				if ((strcmp(userCmd, "dir") == 0) && status == 0) {
+					fp = fopen("diroutput.txt", "r");
+					bytesread = fread(replyMsg, 1, 1024, fp);
+					replyMsg[bytesread] = '\0';	// store null terminator
+					remove("diroutput.txt");
+					fclose(fp);
+					strcat(replyMsg, "\n200 cmd OK\n");
+				} else {
+					strcpy(replyMsg, "500 invalid syntax\nCommand Failed\n");
+				}
+			}
+
+			/*
+			 * This block tests the cd cmd, check cmd, then do a chdir call to perform actions (move to different dir)
+			 * and send replymsg to client if successful
+			 * use chdir() which performs a system call to change current working directory
+			 * cmd test 8, example 'pwd', 'cd ..', 'pwd'
+			 * Jon Petani implemented this command
+			 */
+			else if (strcmp(cmd, "cd") == 0) {
+				cmdCheck = true;
+				status = chdir(argument);
+				if (status == 0) {
+					strcpy(replyMsg, "200 cmd OK\n");
+				} else {
+					strcpy(replyMsg, "500 invalid syntax\nCommand Failed\n");
+				}
+			}
+
+			/*
+			 * This block tests the rm cmd, check cmd, then do a system call to perform action
+			 * and send replymsg to client if successful
+			 * cmd test 9, example 'ls', (use touch to create a file before running this ftp program), 'rm file1', 'ls'
+			 * Brian Perel implemented this command
+			 */
+			else if (strcmp(cmd, "rm") == 0) {
+				cmdCheck = true;
+				status = system(userCmd);
+				if (status == 0) {
+					strcpy(replyMsg, "200 cmd OK\n");
+				} else {
+					strcpy(replyMsg, "500 invalid syntax\nCommand Failed\n");
+				}
+			}
+
+			/*
+			 * mv cmd can be used to rename or move files
+			 * rename (mv) = 'mv old-filename new-filename'
+			 * move (mv) = 'mv filename destination-directory'
+			 */
+			else if (strcmp(cmd, "mv") == 0) {
+				cmdCheck = true;
+				status = system(userCmd);
+				if (status == 0) {
+					strcpy(replyMsg, "200 cmd OK\n");
+				} else {
+					strcpy(replyMsg, "500 invalid syntax\nCommand Failed\n");
+				}
+			}
+
+			/*
+			 * This block tests the pwd cmd, check cmd, then do a system call to perform action
+			 * in which, pwd > pwdoutput.txt stores the content of pwd into the txt file
+			 * open the txt file and read the file content to terminal while sending replymsg back to client
+			 * remove the txt file once operation is finished (content is read to replyMsg and sent)
+			 * cmd test 10, example 'pwd'
+			 * Jon Petani implemented this command
+			 */
+			else if (strcmp(cmd, "pwd") == 0) {
+				cmdCheck = true;
+				status = system("pwd > pwdoutput.txt");
+				if ((strcmp(userCmd, "pwd") == 0) && status == 0) {
+					fp = fopen("pwdoutput.txt", "r");
+					bytesread = fread(replyMsg, 1, 1024, fp);
+					replyMsg[bytesread] = '\0';	// store null terminator
+					remove("pwdoutput.txt");
+					fclose(fp);
+					strcat(replyMsg, "\n200 cmd OK\n");
+				} else {
+					strcpy(replyMsg, "500 invalid syntax\nCommand Failed\n");
+				}
+			}
+
+			/*
+			 * This block tests the ls cmd, check cmd, then do a system call to perform action
+			 * in which ls > lsoutput.txt stores the content of ls into the txt file
+			 * open the txt file and read the content to terminal while sending replymsg back to client
+			 * remove the txt file once operation is finished (content is read to replyMsg and sent)
+			 * cmd test 11, 'ls'
+			 * Jon Petani implemented this command
+			 */
+			else if (strcmp(cmd, "ls") == 0) {
+				cmdCheck = true;
+				status = system("ls > lsoutput.txt");
+				if ((strcmp(userCmd, "ls") == 0) && status == 0) {
+					fp = fopen("lsoutput.txt", "r");
+					bytesread = fread(replyMsg, 1, 1024, fp);
+					replyMsg[bytesread] = '\0';	// store null terminator
+					remove("lsoutput.txt"); // remove the txt file after content is read
+					fclose(fp);
+					strcat(replyMsg, "\n200 cmd OK\n");
+				} else {
+					strcpy(replyMsg, "500 invalid syntax\nCommand Failed\n");
+				}
+			}
 		
-	
+		if(
+			strcpy(replyMsg,"Invalid command");
 		
+		
+	}
+		
+	/*quit command */	
 	while(strcmp(cmd, "quit") != 0);
 
 	printf("Closing control connection socket.\n");
@@ -193,7 +365,7 @@ int main(int argc,char *argv[])
 	return (status);
 }
 
-
+7
 /*
  * svcInitServer
  *
