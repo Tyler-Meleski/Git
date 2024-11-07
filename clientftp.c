@@ -28,16 +28,16 @@
 #define ER_RECEIVE_FAILED -6
 
 /* Function prototypes */
-int clntConnect(char *serverName, int *s); /* connects you to the client */
-int sendMessage(int s, char *msg, int msgSize); /* sends cmd and arg to server */
-int receiveMessage(int s, char *buffer, int bufferSize, int *msgSize); /* receive reply from server */
+int clntConnect(char *serverName, int *s); 
+int sendMessage(int s, char *msg, int msgSize); 
+int receiveMessage(int s, char *buffer, int bufferSize, int *msgSize); 
 
 /* List of all global variables */
 char userCmd[1024]; /* user typed ftp command line read from keyboard */
 char cmd[1024]; /* ftp command extracted from userCmd */
 char argument[1024]; /* argument extracted from userCmd */
 char replyMsg[1024]; /* buffer to receive reply message from server */
-char temp[1024]; /* char array will hold a copy of the userCmd array for division purposes */
+char hold[1024]; /* char array will hold a copy of the userCmd array for division purposes */
 
 /*
  * main
@@ -112,8 +112,8 @@ int main(
 		gets(userCmd); 
 				/* to read the command from the user. Use gets or readln function 
 		 /* Separate command and argument from userCmd */
-		strcpy(temp, userCmd);
-		char *cmd = strtok(temp, " ");
+		strcpy(hold, userCmd);
+		char *cmd = strtok(hold, " ");
 		char *argument = strtok(NULL, " ");
 
 		/* send the userCmd to the server */
