@@ -130,47 +130,30 @@ int main(
 		}
 
 		else if (strcmp(cmd, "pass") == 0) {
-			if (strcmp(userCmd, "pass") != 0) { /* if no argument is provided, then unsuccessful try, since pass needs argument */
+			if (strcmp(userCmd, "pass") != 0) { 
 				passes = true;
 			}
 		}
 
-		/*
-		 * if user has entered username and password, only then can we implement or receive anything for send or recieve cmds
-		 * part of validation for send and recv cmds step
-		 */
 		if (users == true && passes == true) {
 
-			/*
-			 * Function Purpose: send file from client to server
-			 * check cmd, perform data connection via socket to server
-			 * open file with read mode, while file pointer is not null and not end of file, read into bytesread (put content in txt file)
-			 * then open the txt file on client side
-			 * dcSocket is only used for send and recv cmds
-			 * dcSocket uses accept to wait and accept data connection from server
-			 * open file to send data
-			 * repeat until no file pointer
-			 * bytesread stores the number of bytes read
-			 * finally close the file and close the data connection
-			 */
 			if ((strcmp(cmd, "send") == 0) || (strcmp(cmd, "put") == 0)) {
-				/* If you enter send cmd with an argument proceed, otherwise (else) there is no argument so the cmd cannot be executed. In that case print invalid syntax since cmd is correct but syntax is not */
 				if ((strcmp(userCmd, "send") != 0) || (strcmp(userCmd, "put") != 0)) {
-					dcSocket = accept(lSocket, NULL, NULL); /* use accept() to listen for connection via socket */
-					fp = fopen("my_quotes_cs.txt", "r+"); /* open the file from client side */
-					if (fp != NULL) { /* validate that file pointer is not null, file is not empty */
+					dcSocket = accept(lSocket, NULL, NULL); 
+					fp = fopen("my_quotes_cs.txt", "r+");
+					if (fp != NULL) { 
 						printf("File opened\n");
 
-						while (!feof(fp)) { /* loop while not end of line */
-							bytesread = fread(buffer, 1, 100, fp); /* read 1 line at a time, reading 100 bytes from file a time */
+						while (!feof(fp)) { 
+							bytesread = fread(buffer, 1, 100, fp); 
 							printf("Number of bytes read: %d\n", bytesread);
-							sendMessage(dcSocket, buffer, bytesread); /* send data to server-side */
+							sendMessage(dcSocket, buffer, bytesread);
 						}
 						fclose(fp);
 						close(dcSocket);
 					} else {
 						printf("fp open failed\n");
-						strcpy(replyMsg, "Error! file open failed\n");
+						strcpy(replyMsg, "Error file open failed\n");
 					}
 				} else {
 					printf("500 invalid syntax\nCommand Failed\n");
@@ -307,7 +290,7 @@ int clntConnect(char *serverName, int *s) {
 
 int sendMessage(int s, char *msg, int msgSize) {
 	if (send(s, msg, msgSize, 0) < 0) {
-        perror("unable to send");
+        perror("unable to send the message");
         return ER_SEND_FAILED;
     }
     return OK;
@@ -317,7 +300,7 @@ int receiveMessage(int s, char *buffer, int bufferSize, int *msgSize) {
     *msgSize = recv(s, buffer, bufferSize, 0);
     
     if (*msgSize < 0) {
-        perror("unable to receive");
+        perror("unable to receive the message");
         return ER_RECEIVE_FAILED;
     }
 
