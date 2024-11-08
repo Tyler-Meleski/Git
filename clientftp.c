@@ -305,19 +305,11 @@ int clntConnect(char *serverName, int *s) {
 }
 
 int sendMessage(int s, char *msg, int msgSize) {
-
-	for (int i = 0; i < msgSize; i++) {
-		printf("%c", msg[i]);
-	}
-
-	printf("\n");
-
-	if ((send(s, msg, msgSize, 0)) < 0) {
-		perror("unable to send ");
-		return (ER_SEND_FAILED);
-	}
-
-	return (OK); 
+	if (send(s, msg, msgSize, 0) < 0) {
+        perror("unable to send");
+        return ER_SEND_FAILED;
+    }
+    return OK;
 }
 
 int receiveMessage(int s, char *buffer, int bufferSize, int *msgSize) {
