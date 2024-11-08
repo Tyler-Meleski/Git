@@ -288,27 +288,6 @@ int clntConnect(char *serverName, int *s) {
 	return (OK); 
 }
 
-int sendMessage(int s, char *msg, int msgSize) {
-	if (send(s, msg, msgSize, 0) < 0) {
-        perror("unable to send the message");
-        return ER_SEND_FAILED;
-    }
-    return OK;
-}
-
-int receiveMessage(int s, char *buffer, int bufferSize, int *msgSize) {
-    *msgSize = recv(s, buffer, bufferSize, 0);
-    
-    if (*msgSize < 0) {
-        perror("unable to receive the message");
-        return ER_RECEIVE_FAILED;
-    }
-
-    buffer[*msgSize] = '\0'; 
-    printf("Server reply: %s\n", buffer);
-    
-    return OK;
-}
 
 int clntExtractReplyCode(char *buffer, int *replyCode) {
 	sscanf(buffer, "%d", replyCode);
