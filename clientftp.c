@@ -73,10 +73,11 @@ int main(
 	int status;  
 	int lSocket;
 	int ccPort; 
-	char buffer[100]; 
-	FILE *fp; 
 	bool users = false; 
 	bool passes = false; 
+	char buffer[100]; 
+	FILE *fp; 
+	
 	/*
 	 * NOTE: without \n at the end of format string in printf,
 	 * UNIX will buffer (not flush)
@@ -313,21 +314,17 @@ int sendMessage(int s, char *msg, int msgSize) {
 }
 
 int receiveMessage(int s, char *buffer, int bufferSize, int *msgSize) {
+    *msgSize = recv(s, buffer, bufferSize, 0);
+    
+    if (*msgSize < 0) {
+        perror("unable to receive");
+        return ER_RECEIVE_FAILED;
+    }
 
-	*msgSize = recv(s, buffer, bufferSize, 0); 
-
-	if (*msgSize < 0) {
-		perror("unable to receive");
-		return (ER_RECEIVE_FAILED);
-	}
-
-	/* Print the received msg byte by byte */
-	for (int i = 0; i < *msgSize; i++) {
-		printf("%c", buffer[i]);
-	}
-
-	printf("\n");
-	return (OK);
+    buffer[*msgSize] = '\0'; 
+    printf("Server reply: %s\n", buffer);
+    
+    return OK;
 }
 
 int clntExtractReplyCode(char *buffer, int *replyCode) {
