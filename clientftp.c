@@ -150,88 +150,187 @@ int main(
 	return (status);
 } /* end main() */
 
-int svcInitServer(int *s) {
+int clntConnect (
+	char *serverName, /* server IP address in dot notation (input) */
+	int *s 		  /* control connection socket number (output) */
+	)
+{
+	int sock;	/* local variable to keep socket number */
 
-	int sock, qlen;
-	struct sockaddr_in svcAddr;
+	struct sockaddr_in clientAddress;  	/* local client IP address */
+	struct sockaddr_in serverAddress;	/* server IP address */
+	struct hostent	   *serverIPstructure;	/* host entry having server IP address in binary */
 
-	if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-		perror("cannot create socket");
-		return (ER_CREATE_SOCKET_FAILED);
-	}
 
-	memset((char*) &svcAddr, 0, sizeof(svcAddr));
-	
-	svcAddr.sin_family = AF_INET;
-	svcAddr.sin_addr.s_addr = htonl(INADDR_ANY); 
-	svcAddr.sin_port = htons(DATA_CONNECTION_FTP_PORT); 
-
-	if (bind(sock, (struct sockaddr*) &svcAddr, sizeof(svcAddr)) < 0) {
-		perror("cannot bind");
-		close(sock);
-		return (ER_BIND_FAILED); /* bind failed */
-	}
-
-	qlen = 1;
-
-	listen(sock, qlen); /* socket interface function call */
-
-	*s = sock;
-
-	return (OK); 
-}
-
-int clntConnect(char *serverName, int *s) {
-
-	int sock; 
-
-	struct sockaddr_in clientAddress; 
-	struct sockaddr_in serverAddress;
-	struct hostent *serverIPstructure; 
-
-	if ((serverIPstructure = gethostbyname(serverName)) == NULL) {
+	/* Get IP address os server in binary from server name (IP in dot natation) */
+	if((serverIPstructure = gethostbyname(serverName)) == NULL)
+	{
 		printf("%s is unknown server. \n", serverName);
-		return (ER_INVALID_HOST_NAME); 
+		return (ER_INVALID_HOST_NAME);  /* error return */
 	}
 
-	if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+	/* Create control connection socket */
+	if((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+	{
 		perror("cannot create socket ");
-		return (ER_CREATE_SOCKET_FAILED); 
+		return (ER_CREATE_SOCKET_FAILED);	/* error return */
 	}
 
-	memset((char*) &clientAddress, 0, sizeof(clientAddress));
+	/* initialize client address structure memory to zero */
+	memset((char *) &clientAddress, 0, sizeof(clientAddress));
 
-	clientAddress.sin_family = AF_INET; 
-	clientAddress.sin_addr.s_addr = htonl(INADDR_ANY); 
-	clientAddress.sin_port = 0; 
-	
-	if (bind(sock, (struct sockaddr*) &clientAddress, sizeof(clientAddress)) < 0) {
+	/* Set local client IP address, and port in the address structure */
+	clientAddress.sin_family = AF_INET;	/* Internet protocol family */
+	clientAddress.sin_addr.s_addr = htonl(INADDR_ANY);  /* INADDR_ANY is 0, which means */
+						 /* let the system fill client IP address */
+	clientAddress.sin_port = 0;  /* With port set to 0, system will allocate a free port */
+			  /* from 1024 to (64K -1) */
+
+	/* Associate the socket with local client IP address and port */
+	if(bind(sock,(struct sockaddr *)&clientAddress,sizeof(clientAddress))<0)
+	{
 		perror("cannot bind");
 		close(sock);
-		return (ER_BIND_FAILED); 
+		return(ER_BIND_FAILED);	/* bind failed */
 	}
 
-	memset((char*) &serverAddress, 0, sizeof(serverAddress));
 
+	/* Initialize serverAddress memory to 0 */
+	memset((char *) &serverAddress, 0, sizeof(serverAddress));
+
+	/* Set ftp server ftp address in serverAddress */
 	serverAddress.sin_family = AF_INET;
-	memcpy((char*) &serverAddress.sin_addr, serverIPstructure -> h_addr,
-			serverIPstructure -> h_length);
-	serverAddress.sin_port = htons(CONTROL_CONNECTION_FTP_PORT);
+	memcpy((char *) &serverAddress.sin_addr, serverIPstructure->h_addr, 
+			serverIPstructure->h_length);
+	serverAddress.sin_port = htons(SERVER_FTP_PORT);
 
-	if (connect(sock, (struct sockaddr*) &serverAddress, sizeof(serverAddress))
-			< 0) {
-		perror("Cannot connect to server");
-		close(sock); 
-		return (ER_CONNECT_FAILED); 
+	/* Connect to the server */
+	if (connect(sock, (struct sockaddr *) &serverAddress, sizeof(serverAddress)) < 0)
+	{
+		perror("Cannot connect to server ");
+		close (sock); 	/* close the control connection socket */
+		return(ER_CONNECT_FAILED);  	/* error return */
 	}
 
-	*s = sock;
 
-	return (OK); 
+	/* Store listen socket number to be returned in output parameter 's' */
+	*s=sock;
+
+	return(OK); /* successful return */
+}  // end of clntConnect() */
+
+
+
+/*
+ * sendMessage
+ *
+ * Function to send specified number of octet (bytes) to client ftp
+ *
+ * Parameters
+ * s		- Socket to be used to send msg to client (input)
+ * msg  	- Pointer to character arrary containing msg to be sent (input)
+ * msgSize	- Number of bytes, including NULL, in the msg to be sent to client (input)
+ *
+ * Return status
+ *	OK		- Msg successfully sent
+ *	ER_SEND_FAILED	- Sending msg failed
+ */
+
+int sendMessage(
+	int s, 		/* socket to be used to send msg to client */
+	char *msg, 	/*buffer having the message data */
+	int msgSize 	/*size of the message/data in bytes */
+	)
+{
+	int i;
+
+
+	/* Print the message to be sent byte by byte as character */
+	for(i=0;i<msgSize;i++)
+	{
+		printf("%c",msg[i]);
+	}
+	printf("\n");
+
+	if((send(s,msg,msgSize,0)) < 0) /* socket interface call to transmit */
+	{
+		perror("unable to send ");
+		return(ER_SEND_FAILED);
+	}
+
+	return(OK); /* successful send */
 }
 
 
-int clntExtractReplyCode(char *buffer, int *replyCode) {
-	sscanf(buffer, "%d", replyCode);
+/*
+ * receiveMessage
+ *
+ * Function to receive message from client ftp
+ *
+ * Parameters
+ * s		- Socket to be used to receive msg from client (input)
+ * buffer  	- Pointer to character arrary to store received msg (input/output)
+ * bufferSize	- Maximum size of the array, "buffer" in octent/byte (input)
+ *		    This is the maximum number of bytes that will be stored in buffer
+ * msgSize	- Actual # of bytes received and stored in buffer in octet/byes (output)
+ *
+ * Return status
+ *	OK			- Msg successfully received
+ *	ER_RECEIVE_FAILED	- Receiving msg failed
+ */
+
+int receiveMessage (
+	int s, 		/* socket */
+	char *buffer, 	/* buffer to store received msg */
+	int bufferSize, /* how large the buffer is in octet */
+	int *msgSize 	/* size of the received msg in octet */
+	)
+{
+	int i;
+
+	*msgSize=recv(s,buffer,bufferSize,0); /* socket interface call to receive msg */
+
+	if(*msgSize<0)
+	{
+		perror("unable to receive");
+		return(ER_RECEIVE_FAILED);
+	}
+
+	/* Print the received msg byte by byte */
+	for(i=0;i<*msgSize;i++)
+	{
+		printf("%c", buffer[i]);
+	}
+	printf("\n");
+
 	return (OK);
 }
+
+
+/*
+ * clntExtractReplyCode
+ *
+ * Function to extract the three digit reply code 
+ * from the server reply message received.
+ * It is assumed that the reply message string is of the following format
+ *      ddd  text
+ * where ddd is the three digit reply code followed by or or more space.
+ *
+ * Parameters
+ *	buffer	  - Pointer to an array containing the reply message (input)
+ *	replyCode - reply code number (output)
+ *
+ * Return status
+ *	OK	- Successful (returns always success code
+ */
+
+int clntExtractReplyCode (
+	char	*buffer,    /* Pointer to an array containing the reply message (input) */
+	int	*replyCode  /* reply code (output) */
+	)
+{
+	/* extract the codefrom the server reply message */
+   sscanf(buffer, "%d", replyCode);
+
+   return (OK);
+}  // end of clntExtractReplyCode()
