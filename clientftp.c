@@ -135,64 +135,6 @@ int main(
 			}
 		}
 
-		if (users == true && passes == true) {
-
-			if ((strcmp(cmd, "send") == 0) || (strcmp(cmd, "put") == 0)) {
-				if ((strcmp(userCmd, "send") != 0) || (strcmp(userCmd, "put") != 0)) {
-					dcSocket = accept(lSocket, NULL, NULL); 
-					fp = fopen("my_quotes_cs.txt", "r+");
-					if (fp != NULL) { 
-						printf("File opened\n");
-
-						while (!feof(fp)) { 
-							bytesread = fread(buffer, 1, 100, fp); 
-							printf("Number of bytes read: %d\n", bytesread);
-							sendMessage(dcSocket, buffer, bytesread);
-						}
-						fclose(fp);
-						close(dcSocket);
-					} else {
-						printf("fp open failed\n");
-						strcpy(replyMsg, "Error file open failed\n");
-					}
-				} else {
-					printf("500 invalid syntax\nCommand Failed\n");
-				}
-			}
-
-			/*
-			 * Check recv cmd, connect to server, open file and receive message from server, then write that content into file
-			 * then close file pointer and dcSocket
-			 * On client side create and open file, receive message (using receiveMessage() which uses socket), and then write to that file
-			 */
-			else if ((strcmp(cmd, "recv") == 0) || (strcmp(cmd, "get") == 0)) {
-				/* If you enter recv cmd with an argument proceed, otherwise (else) there is no argument so the cmd cannot be executed. In that case print invalid syntax since cmd is correct but syntax is not */
-				if ((strcmp(userCmd, "recv") != 0) || (strcmp(userCmd, "get") != 0)) {
-					dcSocket = accept(lSocket, NULL, NULL); /* establish the data connection using socket / listen for socket */
-					fp = fopen("movie_stars_sc.txt", "w+"); // open the original file on client side
-					if (fp != NULL) {
-						printf("File opened\n");
-
-						/* while message size > 0 receive message and write to the newly created txt file on client side */
-						do {
-							status = receiveMessage(dcSocket, buffer,
-									sizeof(buffer), &msgSize);
-							fwrite(buffer, 1, msgSize, fp);
-						} while ((msgSize > 0) && (status == 0));
-
-						fclose(fp);
-						close(dcSocket);
-					} else {
-						printf("fp open failed\n");
-						strcpy(replyMsg, "Error! file open failed\n");
-					}
-				} else {
-					printf("500 invalid syntax\nCommand Failed\n");
-				}
-			}
-
-		}
-
 		/* Receive reply message from the the server */
 		status = receiveMessage(ccSocket, replyMsg, sizeof(replyMsg), &msgSize);
 		if (status != OK) {
