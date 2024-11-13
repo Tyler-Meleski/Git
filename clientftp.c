@@ -73,10 +73,6 @@ int main(
 	int status;  
 	int lSocket;
 	int ccPort; 
-	bool users = false; 
-	bool passes = false; 
-	char buffer[100]; 
-	FILE *fp; 
 	
 	/*
 	 * NOTE: without \n at the end of format string in printf,
