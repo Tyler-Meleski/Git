@@ -37,7 +37,7 @@ int receiveMessage(int s, char *buffer, int bufferSize, int *msgSize);
 char userCmd[1024]; /* user typed ftp command line read from keyboard */
 char cmd[1024]; /* ftp command extracted from userCmd */
 char argument[1024]; /* argument extracted from userCmd */
-char replyMsg[1024]; /* buffer to receive reply message from server */
+char replyMsg[2048]; /* buffer to receive reply message from server */
 char hold[1024]; /* char array will hold a copy of the userCmd array for division purposes */
 
 /*
