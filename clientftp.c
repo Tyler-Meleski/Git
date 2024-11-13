@@ -256,7 +256,7 @@ int clntExtractReplyCode (
 	int	*replyCode  
 	)
 {
-	/* extract the codefrom the server reply message */
+	
    sscanf(buffer, "%d", replyCode);
 
    return (OK);
