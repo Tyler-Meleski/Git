@@ -177,7 +177,8 @@ exit(status);
 					strcpy(replyMsg, "Invalid ftp username\nUsername not found\n");
 					printf("Invalid ftp username\nUsername not found\n");
 				}
-			}			
+			}
+			
 			else if (strcmp(cmd, "pass") == 0) 
 			{  /*If the cmd alone is equal to 'pass' enter conditional statement */
 				
@@ -196,8 +197,8 @@ exit(status);
 				}
 			}
 			 
-			 else if ((strcmp(cmd, "help") == 0) || (strcmp(cmd, "?") == 0)) {
-				
+			else if ((strcmp(cmd, "help") == 0) || (strcmp(cmd, "?") == 0)) 
+			{
 				
 					userCheck, passCheck, cmdCheck = true;
 					strcpy(replyMsg,
@@ -216,34 +217,28 @@ exit(status);
 									"quit: exit program.\n"
 									"stat: display file or filesystem status. Must include '-f /__' as argument.\n"
 									"help: display information about all commands.\n");
-				}
+			}
 				
-				else if (strcmp(cmd, "stat") == 0) 
-				{
+			else if (strcmp(cmd, "stat") == 0) 
+			{
 				
 					status = system(userCmd);
 					if (status == 0) 
 					{
 						strcpy(replyMsg, "200 cmd OK\n transfer mode is ascii\n");
-					} else 
+					} 
+					else 
 					{
 						strcpy(replyMsg, "500 invalid syntax\nCommand Failed\n");
 					}
-				}
+			}
 			 /* ftp server sends only one reply message to the client for 
 			 * each command received in this implementation.
 			 */
-			 
-			 
-			 
-			strcpy(replyMsg,"200 cmd okay\n");  /* Should have appropriate reply msg starting HW2 */
+			
 			status=sendMessage(ccSocket,replyMsg,strlen(replyMsg) + 1);	/* Added 1 to include NULL character in */
 					/* the reply string strlen does not count NULL character */
-					
-					
-					
-					
-					
+							
 		if(status < 0)
 			{
 				printf("Receive message has failed. Closing server connection" ;
@@ -252,12 +247,14 @@ exit(status);
 			}
 		}
 		/* This block of code will only work if the user was able to login with their password. Send ,Recev mkdir, rmdir,
-		ls, pwd, dele, cd */
+		ls, pwd, dele, cd 
+		* Lucas and Tyler worked on this command
+		*/
 		if(checkUser = true && checkPass== true;)
 		{
 				if (strcmp(cmd, "mkdir") == 0) 
 				{
-					cmdCheck = true;
+					
 					status = system(userCmd);
 					if (status == 0) 
 					{
@@ -276,7 +273,7 @@ exit(status);
 				 */
 				else if (strcmp(cmd, "rmdir") == 0) 
 				{
-					cmdCheck = true;
+					
 					status = system(userCmd);
 					if (status == 0) 
 					{
@@ -323,7 +320,7 @@ exit(status);
 				 * This block tests the rm cmd, check cmd, then do a system call to perform action
 				 * and send replymsg to client if successful
 				 * cmd test 9, example 'ls', (use touch to create a file before running this ftp program), 'rm file1', 'ls'
-				 * Tyler Meleski worked on this command.
+				 * Lucas worked on this command.
 				 */
 				else if (strcmp(cmd, "rm") == 0) 
 				{
@@ -342,6 +339,7 @@ exit(status);
 				 * mv cmd can be used to rename or move files
 				 * rename (mv) = 'mv old-filename new-filename'
 				 * move (mv) = 'mv filename destination-directory'
+				 *Lucas worked on this code
 				 */
 				else if (strcmp(cmd, "mv") == 0) 
 				{
@@ -357,12 +355,12 @@ exit(status);
 				}
 
 				/*
-				 * This block tests the pwd cmd, check cmd, then do a system call to perform action
+				 * This block works the pwd cmd, check cmd, then do a system call to perform action
 				 * in which, pwd > pwdoutput.txt stores the content of pwd into the txt file
 				 * open the txt file and read the file content to terminal while sending replymsg back to client
 				 * remove the txt file once operation is finished (content is read to replyMsg and sent)
-				 * cmd test 10, example 'pwd'
-				 * Jon Petani implemented this command
+				 * 
+				 * Lucas implemented this command
 				 */
 				else if (strcmp(cmd, "pwd") == 0) 
 				{
@@ -389,7 +387,7 @@ exit(status);
 				 * open the txt file and read the content to terminal while sending replymsg back to client
 				 * remove the txt file once operation is finished (content is read to replyMsg and sent)
 				 * cmd test 11, 'ls'
-				 * Jon Petani implemented this command
+				 * Tyler & Lucas worked on this command
 				 */
 				else if (strcmp(cmd, "ls") == 0) 
 				{
@@ -475,7 +473,7 @@ int svcInitServer (
 		return(ER_BIND_FAILED);	/* bind failed */
 	}
 
-	/* 
+	/* z
 	 * Set listen queue length to 1 outstanding connection request.
 	 * This allows 1 outstanding connect request from client to wait
 	 * while processing current connection request, which takes time.
