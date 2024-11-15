@@ -42,7 +42,7 @@ char userCmd[1024];	/* user typed ftp command line read from keyboard */
 char cmd[1024];		/* ftp command extracted from userCmd */
 char argument[1024];	/* argument extracted from userCmd */
 char replyMsg[1024];    /* buffer to receive reply message from server */
-char temp[1024];
+char hold[1024];
 
 /*
  * main
@@ -117,7 +117,7 @@ int main(int argc, char *argv[]) {
 
 		strcpy(temp, userCmd);
 		/* Separate command and argument from userCmd */
-		char *cmd = strtok(temp, " "); /* Modify in Homework 2.  Use strtok function */
+		char *cmd = strtok(hold, " "); /* Modify in Homework 2.  Use strtok function */
 		char *argument = strtok(NULL, " "); /* Modify in Homework 2.  Use strtok function */
 
 		/* send the userCmd to the server */
